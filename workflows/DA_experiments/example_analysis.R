@@ -13,3 +13,10 @@ rmse <- scores |>
 
 ggplot(rmse, aes(x = horizon, y = rmse, color = model_id)) +
   geom_line()
+
+
+scores |> 
+  filter(variable == "lw_factor",
+         horizon <= 0) |>
+  ggplot(aes(x = datetime, y = mean, color = model_id)) +
+  geom_line()

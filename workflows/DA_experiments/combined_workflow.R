@@ -2,6 +2,8 @@ library(tidyverse)
 library(hydroGOF)
 library(lubridate)
 
+set.seed(100)
+
 lake_directory <- here::here()
 forecast_site <- "bvre"
 configure_run_file <- "configure_run.yml"
