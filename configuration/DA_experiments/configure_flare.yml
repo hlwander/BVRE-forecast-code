@@ -55,7 +55,7 @@ da_setup:
     no_negative_states: TRUE
     assimilate_first_step: FALSE
 model_settings:
-   ncore: 4
+   ncore: 5
    model_name: glm #other is "null"
    base_GLM_nml: glm3.nml
    modeled_depths: [0.00, 0.50, 1.00,

@@ -111,9 +111,12 @@ in_situ_qaqc <- function(insitu_obs_fname,
 
   d_clean$site_id <- "bvre"
   
-  d_clean <- d_clean %>% dplyr::select(time, site_id, depth, observed, variable)
+  d_clean <- d_clean %>% 
+    dplyr::select(time, site_id, depth, observed, variable) |> 
+    dplyr::rename(datetime = time,
+                  observation = observed)
   
-  d_clean$observed <- round(d_clean$observed, digits = 4)
+  d_clean$observation <- round(d_clean$observation, digits = 4)
   
   if(!dir.exists(dirname(cleaned_insitu_file))){
     dir.create(dirname(cleaned_insitu_file), recursive = TRUE)

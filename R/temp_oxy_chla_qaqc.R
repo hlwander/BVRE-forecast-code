@@ -1,6 +1,3 @@
-# Install packages
-pacman::p_load(tidyverse,lubridate, plotly, dplyr)
-
 temp_oxy_chla_qaqc <- function(realtime_file,
                                qaqc_file,
                                maintenance_file,
