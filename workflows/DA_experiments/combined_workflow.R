@@ -174,7 +174,7 @@ for(i in starting_index:nrow(sims)){
   
   da_freq <- which(names(date_list) == sims$model[i])
   
-  met_out <- FLAREr::generate_met_files_arrow(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".csv")),
+  met_out <- FLAREr::generate_met_files_arrow(obs_met_file = NULL,
                                               out_dir = config$file_path$execute_directory,
                                               start_datetime = config$run_config$start_datetime,
                                               end_datetime = config$run_config$end_datetime,
