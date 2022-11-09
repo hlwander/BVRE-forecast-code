@@ -2,15 +2,15 @@ library(tidyverse)
 library(lubridate)
 lake_directory <- here::here()
 setwd(lake_directory)
-forecast_site <- "bvre"
-configure_run_file <- "configure_run.yml"
-update_run_config <- TRUE
-config_set_name <- "default"
+forecast_site <<- "bvre"
+configure_run_file <<- "configure_run.yml"
+update_run_config <<- TRUE
+config_set_name <<- "default"
 
 message("Checking for NOAA forecasts")
-noaa_ready <- FLAREr::check_noaa_present(lake_directory,
-                                         configure_run_file,
-                                         config_set_name = config_set_name)
+noaa_ready <- FLAREr::check_noaa_present_arrow(lake_directory,
+                                               configure_run_file,
+                                               config_set_name = config_set_name)
 
 if(!noaa_ready){
   config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
@@ -25,9 +25,9 @@ if(!is.null(config$run_config$forecast_fails)){
   if(config$run_config$forecast_fails > 0){
     config$run_config$forecast_fails <- 0
     FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file = NA, new_horizon = NA, day_advance = 1, new_start_datetime = FALSE)
-    noaa_ready <- FLAREr::check_noaa_present(lake_directory,
-                                             configure_run_file,
-                                             config_set_name = config_set_name)
+    noaa_ready <- FLAREr::check_noaa_present_arrow(lake_directory,
+                                                   configure_run_file,
+                                                   config_set_name = config_set_name)
   }
 }
 
@@ -47,21 +47,20 @@ if(noaa_ready){
   setwd(lake_directory)
   
   message("Generating inflow forecast")
-  #source(file.path("workflows", config_set_name, "02_run_inflow_forecast.R"))
+  source(file.path("workflows", config_set_name, "02_run_inflow_forecast.R"))
   
   setwd(lake_directory)
-
+  
   message("Generating forecast")
   source(file.path("workflows", config_set_name, "03_run_flarer_forecast.R"))
   
   setwd(lake_directory)
   
-  message("Generating plots")
-  source(file.path("workflows", config_set_name, "04_visualize.R"))
+  #message("Generating plots")
+  #source(file.path("workflows", config_set_name, "04_visualize.R"))
   
   config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
   config$run_config$forecast_fails <- 0
   FLAREr::update_run_config(config, lake_directory, configure_run_file, new_start_datetime = FALSE)
   
 }
-

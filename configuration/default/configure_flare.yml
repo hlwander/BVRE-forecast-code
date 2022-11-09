@@ -8,36 +8,33 @@ file_path:
 s3:
   drivers:
     endpoint: s3.flare-forecast.org
-    bucket: drivers
-  analysis:
-    endpoint: s3.flare-forecast.org
-    bucket: analysis
+    bucket: drivers/noaa/gefs-v12
   targets:
     endpoint: s3.flare-forecast.org
-    bucket: targets
+    bucket: targets/bvre_v2
   forecasts:
     endpoint: s3.flare-forecast.org
-    bucket: forecasts
-  forecasts_csv:
+    bucket: forecasts/bvre_v2
+  forecasts_parquet:
     endpoint: s3.flare-forecast.org
-    bucket: test-csv
+    bucket: forecasts/parquet
   warm_start:
     endpoint: s3.flare-forecast.org
-    bucket: restart
+    bucket: restart/bvre_v2
   scores:
     endpoint: s3.flare-forecast.org
-    bucket: scores
+    bucket: scores/parquet
 location:
    site_id: bvre
    name: Beaverdam Reservoir
    latitude: 37.307   #Degrees North
    longitude: 79.81607  #Degrees West
 metadata:
-   generate_eml: TRUE
+   generate_eml: FALSE
    forecast_project_id: test
    abstract: "This is where a longer description of the forest can be added"
    forecast_title: FLARE
-   intellectualRights: MIT
+   intellectualRights: insert license
    model_description:
       forecast_model_id: https://github.com/rqthomas/flare/commit/d1ddcb07b9d28863890597503fc4aa4a4496de56
       name: General Lake Model
@@ -52,47 +49,49 @@ metadata:
 da_setup:
     use_obs_constraint: TRUE
     da_method: enkf
-    par_fit_method: inflate
-    ensemble_size: 200
+    par_fit_method: perturb_const
+    ensemble_size: 256
     localization_distance: .na #distance in meters were covariances in the model error are used
     no_negative_states: TRUE
     assimilate_first_step: FALSE
 model_settings:
-   ncore: 2
+   ncore: 4
    model_name: glm #other is "null"
    base_GLM_nml: glm3.nml
-   modeled_depths: [0.10, 0.50, 1.00,
+   modeled_depths: [0.00, 0.50, 1.00,
                     1.50, 2.00, 2.50, 3.00,
                     3.50, 4.00, 4.50, 5.00,
                     5.50, 6.00, 6.50, 7.00, 
                     7.50, 8.00, 8.50, 9.00,
-                    9.50, 10.00, 10.50, 11.00] 
-   par_config_file: parameter_calibration_config.csv
+                    9.50, 10.00, 10.50, 11.00,
+                    11.50, 12.00, 12.50, 13.00] #[1.00, 2.00,
+                #3.00, 4.00, 5.00,
+                #6.00, 7.00, 8.00] 
+   par_config_file: parameter_calibration_config.csv #change this to NULL to keep parmeters constant
    obs_config_file: observations_config.csv
    states_config_file: states_config.csv
    depth_model_sd_config_file: depth_model_sd.csv
 default_init:
-   lake_depth: 11  #not a modeled state
-   temp: [27,26,23,23,14,11,10,9,9,9,9,9] #4.8,4.8,4.78,4.76,4.73,4.73,4.73,4.73,4.71,4.71,4.7,4.7
-   temp_depths: [0.1,1,2,3,4,5,6,7,8,9,10,11] 
+   lake_depth: 13  #not a modeled state
+   temp: [4.8,4.8,4.78,4.76,4.73,4.73,4.73,4.73,4.71,4.71,4.7,4.7,4.7,4.7] #27,26,23,23,14,11,10,9,9,9,9,9
+   temp_depths: [0.1,1,2,3,4,5,6,7,8,9,10,11,12,13] 
    salinity: 0.0
    snow_thickness: 0.0
    white_ice_thickness: 0.0
    blue_ice_thickness: 0.0
 inflow:
-   use_forecasted_inflow: FALSE
-   forecast_inflow_model: .na
+   use_forecasted_inflow: TRUE
+   forecast_inflow_model: inflow/FLOWS-NOAAGEFS-TMWB
 met:
    use_forecasted_met: TRUE
    forecast_met_model: noaa/NOAAGEFS_1hr
-   historical_met: observed
 uncertainty:
-   observation: TRUE
-   process: TRUE
-   weather: TRUE
-   initial_condition: TRUE
-   parameter: TRUE
-   met_downscale: TRUE
-   inflow_process: FALSE
+   observation_uncertainty: TRUE
+   process_uncertainty: TRUE
+   weather_uncertainty: TRUE
+   initial_condition_uncertainty: TRUE
+   parameter_uncertainty: TRUE
+   met_downscale_uncertainty: TRUE
+   inflow_process_uncertainty: TRUE
 output_settings:
    diagnostics_names:  [extc]
