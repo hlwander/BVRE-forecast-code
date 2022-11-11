@@ -63,16 +63,13 @@ model_settings:
                     3.50, 4.00, 4.50, 5.00,
                     5.50, 6.00, 6.50, 7.00, 
                     7.50, 8.00, 8.50, 9.00,
-                    9.50, 10.00, 10.50, 11.00,
-                    11.50, 12.00, 12.50, 13.00] #[1.00, 2.00,
-                #3.00, 4.00, 5.00,
-                #6.00, 7.00, 8.00] 
+                    9.50, 10.00, 10.50, 11.00]
    par_config_file: parameter_calibration_config.csv #change this to NULL to keep parmeters constant
    obs_config_file: observations_config.csv
    states_config_file: states_config.csv
    depth_model_sd_config_file: depth_model_sd.csv
 default_init:
-   lake_depth: 13  #not a modeled state
+   lake_depth: 11  #not a modeled state
    temp: [4.8,4.8,4.78,4.76,4.73,4.73,4.73,4.73,4.71,4.71,4.7,4.7,4.7,4.7] #27,26,23,23,14,11,10,9,9,9,9,9
    temp_depths: [0.1,1,2,3,4,5,6,7,8,9,10,11,12,13] 
    salinity: 0.0
