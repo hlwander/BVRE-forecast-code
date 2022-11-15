@@ -6,7 +6,7 @@ pacman::p_load(reshape2)
 #inflation parameter figs (fixed, 1.02, 1.04)
 #and different start days (27nov, 24nov, 22nov)
 
-#read in all forecast csvs
+#read in all forecast csvs 
 daily_27nov <- list.files(file.path(lake_directory,"analysis/summary_files/27nov_start/daily"), pattern="csv", full.names=TRUE)
 daily_27nov <- lapply(daily_27nov, read_csv) %>% bind_rows() %>% mutate(DA = "Daily")
 
@@ -232,7 +232,40 @@ params %>% filter(depth %in% c(1,5,9)) %>%
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_parameters.jpg"),width=3.5, height=4)
 
 #------------------------------------------------------------------------------------------------#
-#parameter evolution figs
+#parameter evolution figs 
+#read in all forecasts 
+params_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/da_study"))
+params <- arrow::open_dataset(score_dir) |> collect() |>   
+  filter(variable %in% c("lw_factor","zone1temp","zone2temp"), horizon <=0)
+
+#change datetime format
+params$datetime <- as.Date(params$datetime)
+
+#change model_id to be all uppercase
+params$model_id <- str_to_title(params$model_id)
+
+#change DA factor order
+params$model_id <- factor(params$model_id, levels = c("Daily", "Weekly","Fortnightly","Monthly"))
+
+#change order of DA frequencies so daily is plotted on top
+params$model_id <- factor(params$model_id, levels=rev(levels(params$model_id)))
+
+ggplot(params, aes(datetime, mean, color=model_id)) + theme_bw() +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.59,0.03),
+        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
+        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
+        legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
+  scale_color_manual(values=cb_friendly_2) +
+  scale_fill_manual(values=cb_friendly_2) +
+  facet_wrap(~variable, scales="free_y",ncol=1) + ylab("parameter")+
+  scale_x_date(date_labels = "%b") + #ylab(expression("Temperature ("*~degree*C*")")) + xlab("")  +
+  geom_ribbon(aes(y = mean, ymin = mean-sd, ymax = mean+sd, color=model_id, fill=model_id), alpha=0.5) +
+  guides(color = guide_legend(title="DA frequency",reverse = TRUE), fill="none")
+#ggsave(file.path(lake_directory,"analysis/figures/paramRMSEvsHorizon_start_date.jpg"),width=3.5, height=4)
+
+
+
 
 source(file.path(lake_directory,"R/read_flare_params.R"))
 
