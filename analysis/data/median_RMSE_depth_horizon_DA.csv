@@ -1,4 +1,4 @@
-"Depth_m","DA","Horizon_days","TempDynamics","RMSE_C"
+"Depth_m","model_id","Horizon_days","TempDynamics","RMSE_C"
 1,"Daily",1,"Mixed",0.00668500678920836
 1,"Daily",7,"Mixed",0.87787255993162
 1,"Daily",35,"Mixed",2.51196059674627
