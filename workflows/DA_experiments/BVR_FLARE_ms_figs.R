@@ -25,7 +25,7 @@ score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/da
 all_DA_forecasts <- arrow::open_dataset(score_dir) |> collect() |>   
   filter(!is.na(observation), variable == "temperature",horizon > 0)
 
-#round depths up to nearest m
+#round depths up to nearest m 
 all_DA_forecasts$depth <- ceiling(all_DA_forecasts$depth)
 
 #add a group number so that I can average horizons later on
@@ -41,12 +41,12 @@ all_DA_forecasts <- all_DA_forecasts %>%
 strat_date<- "2021-11-07"
 
 #add stratified vs mixed col
-all_DA_forecasts$phen <- ifelse(all_DA_forecasts$datetime <= as.Date(strat_date) & 
+all_DA_forecasts$phen <- ifelse(all_DA_forecasts$datetime <= as.POSIXct(strat_date) & 
                                   all_DA_forecasts$datetime >="2021-03-13","Stratified", "Mixed")
 
 #remove n=6 days with ice-cover 
 all_DA_forecasts <- all_DA_forecasts[!(as.Date(all_DA_forecasts$datetime) %in% c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
-                                    as.Date("2021-02-13"),as.Date("2021-02-14"),as.Date("2021-02-15"))),]
+                                                                                 as.Date("2021-02-13"),as.Date("2021-02-14"),as.Date("2021-02-15"))),]
 
 #change model_id to be all uppercase
 all_DA_forecasts$model_id <- str_to_title(all_DA_forecasts$model_id)
@@ -89,7 +89,7 @@ forecast_horizon_avg$model_id <- factor(forecast_horizon_avg$model_id, levels=c(
 cb_friendly <- c("#117733", "#332288","#AA4499", "#44AA99", "#999933", "#661100")
 cb_friendly_2 <- c("#8C510A", "#BF812D", "#C7EAE5", "#35978F") #"#DFC27D", "#DEDEDE",
 
-#FIGURE 4: DA frequency boxplots for 1, 5, and 9m and 1, 7, and 35-day horizons
+#FIGURE 5: DA frequency boxplots for 1, 5, and 9m and 1, 7, and 35-day horizons
 
 #creating smaller dataset for kw test w/ 1,5,9m and 1,7,35 days
 kw_horizons <- forecast_skill_depth_horizon[forecast_skill_depth_horizon$depth %in% c(1,5,9) & forecast_skill_depth_horizon$horizon %in% c(1,7,35),]
@@ -100,7 +100,7 @@ kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth
 dunn_strat_1m <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==1] ~ 
                             kw_horizons$model_id[kw_horizons$phen=="Stratified" & kw_horizons$depth==1])
 rslt_strat_1m=toupper(cldList(P.adj ~ Comparison, data=dunn_strat_1m$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-#rslt_strat_1m <- c("b","a","a","a") #manually creating letters because I seriously can't figure out how to get a = lowest RMSE
+#rslt_strat_1m <- c("b","a","ab","ab") #manually creating letters because I seriously can't figure out how to get a = lowest RMSE
 median_strat_1m_daily <- c(median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==1 & kw_horizons$horizon ==1 & kw_horizons$model_id=="Daily"]),
                            median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==1 & kw_horizons$horizon ==7 & kw_horizons$model_id=="Daily"]),
                            median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==1 & kw_horizons$horizon ==35 & kw_horizons$model_id=="Daily"]))
@@ -820,9 +820,9 @@ pvals_depths <- data.frame("Horizon_days"= c(rep(1,12),rep(7,12),rep(35,12)),
 
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#### FIGURE 4: 1,5,9m depth facets for each DA frequency for 1,7,and 35-day ahead forecasts  ####
+#### FIGURE 5: 1,5,9m depth facets for each DA frequency for 1,7,and 35-day ahead forecasts  ####
 
-#new df with letters for each horizon
+#new df with letters for each horizon NOTE: these letters are prob wrong so would need to manually adjust
 #letters <- data.frame("depth"= c(rep(1,24),rep(5,24),rep(9,24)),
 #                      "horizon" = rep(c(1,7,35),24),
 #                      "DA" = rep(c(rep("Daily",3),rep("Weekly",3),rep("Fortnightly",3),rep("Monthly",3)),6),
@@ -851,7 +851,7 @@ letters <- data.frame("depth"= c(rep(1,8),rep(5,8),rep(9,8)),
                       "phen" = rep(c(rep("Mixed",4),rep("Stratified",4)),3),
                       "letter" = tolower(c(rslt_mix_1m, rslt_strat_1m, rslt_mix_5m, rslt_strat_5m,
                                             rslt_mix_9m,rslt_strat_9m)),
-                      "max.RMSE" = c(rep(3.5,16),rep(2.6,8)))
+                      "max.RMSE" = c(rep(5,16),rep(3.6,8)))
 
 #rename depth facets
 depths <- c("1m","5m","9m")
@@ -874,11 +874,11 @@ kw_horizons %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   geom_text(data=letters,aes(x=model_id,y=0.2+max.RMSE,label=letters$letter),hjust=0.1,vjust = -0.1, size=2.5) +
   facet_grid(depth~phen, scales="free_y",labeller = labeller(depth = depths)) 
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_fig4.jpg"),width=3.5, height=4)
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_fig5.jpg"),width=3.5, height=4)
 
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#### FIGURE 5: mixed and stratified RMSE tileplots aggregated across all depths  ####
+#### FIGURE 6: mixed and stratified RMSE tileplots aggregated across all depths  ####
 
 #round rmse to nearest 0.5 for tile plot below
 forecast_horizon_avg$RMSE_bins <- plyr::round_any(forecast_horizon_avg$RMSE,0.5) 
@@ -890,18 +890,18 @@ ggplot(forecast_horizon_avg, aes(model_id, horizon, fill=RMSE_bins)) +
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), panel.spacing=unit(0, "cm"),
         panel.grid.major = element_blank(),panel.grid.minor = element_blank())+
   guides(fill=guide_legend(title="RMSE")) +  scale_fill_gradientn(colors = hcl.colors(4, "BuPu")) 
-ggsave(file.path(lake_directory,"analysis/figures/HorizonvsDA_tileplot_fig5.jpg"),width=4, height=3.5)
+ggsave(file.path(lake_directory,"analysis/figures/HorizonvsDA_tileplot_fig6.jpg"),width=4, height=3.5)
 
 #median mixed vs stratified period rmse across different horizons
 median(forecast_horizon_avg$RMSE_bins[forecast_horizon_avg$phen=="Mixed" & forecast_horizon_avg$horizon==9 & forecast_horizon_avg$model_id=="Fortnightly"])
 median(forecast_horizon_avg$RMSE_bins[forecast_horizon_avg$phen=="Stratified" & forecast_horizon_avg$horizon==1 & forecast_horizon_avg$model_id=="Fortnightly"])
 
 #------------------------------------------------------------------------------------------------#
-# Data assimilation figure 6
+# Data assimilation figure 4
 DA <- all_DA_forecasts
 
-#pull out 2 horizons for fig 6 (mixed vs stratified)
-DA_sub <- DA[(DA$datetime >="2021-01-01" & DA$datetime <="2021-01-31") | (DA$datetime >="2021-06-25" & DA$datetime <="2021-07-25"),]
+#pull out 2 horizons for fig 4 (mixed vs stratified)
+DA_sub <- DA[(DA$datetime >="2021-01-01" & DA$datetime <="2021-01-31") | (DA$datetime >="2021-06-24" & DA$datetime <="2021-07-25"),]
 
 #summary df to average the forecasts for each DA freq, horizon, depth, forecast_start_day, and date
 DA_sub_final <- plyr::ddply(DA_sub, c("depth", "datetime","horizon", "model_id"), function(x) {
@@ -929,17 +929,18 @@ DA_sub_final$model_id <- factor(DA_sub_final$model_id, levels=rev(levels(DA_sub_
 
 ggplot(subset(DA_sub_final, horizon==1 & depth %in% c(1,5,9)), aes(datetime, forecast_mean, color=model_id)) + 
   geom_ribbon(aes(x=datetime, y = forecast_mean, ymin = forecast_mean-forecast_sd, ymax = forecast_mean+forecast_sd, 
-                  color=model_id, fill=model_id, linetype=NA),alpha=0.4,show.legend = F) + geom_line(size=0.5) + theme_bw() + 
-  geom_point(aes(x=datetime, y=observed), col="black", size=0.3) +
+                  color=model_id, fill=model_id),alpha=0.4)  + theme_bw() + 
+  #geom_line(aes(datetime, forecast_mean), size=0.2, data = . %>% filter(model_id %in% c("Daily"))) +
+  geom_point(aes(x=datetime, y=observed), col="black", size=0.3) +  
   facet_wrap(depth~phen, scales = "free", labeller = labeller(depth=depths,.multi_line = FALSE),ncol = 2) + scale_x_date() +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.76,0.02),
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.76,0.985),
         legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(), legend.key=element_rect(fill=NA),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 4.5),legend.text  = element_text(size = 4.5), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   ylab(expression("Temperature ("*~degree*C*")")) + xlab("")  + scale_color_manual(values=rev(cb_friendly_2)) + scale_fill_manual(values=rev(cb_friendly_2)) +
-  guides(color = guide_legend(title="",override.aes=list(fill=NA), reverse = TRUE), fill= "none")
-ggsave(file.path(lake_directory,"analysis/figures/AssimilationVSdatafreq_fig6.jpg"), width=3.5, height=4) 
+  guides(fill = guide_legend(title="", override.aes = list(alpha=1),reverse = TRUE), color="none")
+ggsave(file.path(lake_directory,"analysis/figures/AssimilationVSdatafreq_fig4.jpg"), width=3.5, height=4) 
 
 #uncertainty range across depths and mixed vs stratified periods
 ((mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Monthly"]) -
@@ -995,16 +996,16 @@ ggplot(sub) +   theme_bw() +
   geom_rect(data = phen, aes(fill = "Mixed"), xmin=-Inf ,xmax = as.Date("2021-03-12"), ymin = -Inf, ymax = Inf, inherit.aes = FALSE) + 
   geom_rect(data = phen, aes(fill = "Stratified"), xmin=as.Date("2021-03-13") ,xmax = as.Date("2021-11-07"), ymin = -Inf, ymax = Inf, inherit.aes = FALSE)+
   geom_rect(data = phen, aes(fill = "Mixed"), xmin=as.Date("2021-11-08") ,xmax = Inf, ymin = -Inf, ymax = Inf, inherit.aes = FALSE) +
-  geom_line(aes(Date, as.numeric(observation), color = factor(depth)), size=0.2) + ylab(expression("Temperature ("*~degree*C*")")) + xlab("") +
+  geom_line(aes(Date, as.numeric(observation), color = factor(depth)), size=0.4) + ylab(expression("Temperature ("*~degree*C*")")) + xlab("") +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.11,0.59), legend.background = element_blank(),
         legend.key = element_blank(), legend.key.height = unit(0.3,"cm"), legend.key.width = unit(0.4,"cm"), legend.spacing.y = unit(0.01,"cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank())+
   scale_fill_manual('', values = c('gray','white')) +
   guides(color = guide_legend("Depth (m)"), fill= guide_legend(order = 1, override.aes= list(color="black")))
-#ggsave(file.path(lake_directory,"analysis/figures/2021_watertemp_mixedVstratified.jpg"))
+ggsave(file.path(lake_directory,"analysis/figures/2021_watertemp_mixedVstratified.jpg"))
 
 #-------------------------------------------------------------------------------#
-# Fig 8? - fig to compare forecast skill across horizons and depths 
+# Fig 7 - fig to compare forecast skill across horizons and depths 
 
 #more KW tests
 #kruskal wallis and dunn tests for 1m + 1day Mixed rmse across DA freq
@@ -1223,6 +1224,20 @@ median_strat_9m_35d_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratif
 median_strat_9m_35d_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==9 & kw_horizons$horizon ==35 & kw_horizons$model_id=="Fortnightly"])
 median_strat_9m_35d_monthly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==9 & kw_horizons$horizon ==35 & kw_horizons$model_id=="Monthly"])
 
+#create table to export mixed and stratified p-vals comparing depths for each horizon and DA freq
+pvals_fig7_DA <- data.frame("Depth_m"= c(rep(1,18),rep(5,18),rep(9,18)),
+                            "Horizon" = c(rep(c(rep(1,6),rep(7,6),rep(35,6)),3)),
+                            "Comparison" = rep(c(dunn_mix_1m_1d$res$Comparison),9),
+                            "Mixed_pvalue" = c(dunn_mix_1m_1d$res$P.adj,dunn_mix_1m_7d$res$P.adj,dunn_mix_1m_35d$res$P.adj,
+                                               dunn_mix_5m_1d$res$P.adj,dunn_mix_5m_7d$res$P.adj,dunn_mix_5m_35d$res$P.adj,
+                                               dunn_mix_9m_1d$res$P.adj,dunn_mix_9m_7d$res$P.adj,dunn_mix_9m_35d$res$P.adj),
+                            "Stratified_pvalue" = c(dunn_strat_1m_1d$res$P.adj,dunn_strat_1m_7d$res$P.adj,dunn_strat_1m_35d$res$P.adj,
+                                                    dunn_strat_5m_1d$res$P.adj,dunn_strat_5m_7d$res$P.adj,dunn_strat_5m_35d$res$P.adj,
+                                                   dunn_strat_9m_1d$res$P.adj,dunn_strat_9m_7d$res$P.adj,dunn_strat_9m_35d$res$P.adj))
+#write.csv(pvals_fig5_DA,file.path(lake_directory,"analysis/data/pvals_fig7_DA.csv"),row.names = FALSE)
+
+
+
 #create new df with all letters 
 DA_horizon_letters <- data.frame("Depth_m"= c(rep(c(rep(1,12),rep(5,12),rep(9,12)),2)),
                                  "Horizon" = c(rep(c(1,7,35),6)),
@@ -1235,6 +1250,9 @@ DA_horizon_letters <- data.frame("Depth_m"= c(rep(c(rep(1,12),rep(5,12),rep(9,12
                                                       rslt_strat_5m_1d,rslt_strat_5m_7d,rslt_strat_5m_35d,
                                                       rslt_strat_9m_1d,rslt_strat_9m_7d,rslt_strat_9m_35d)))
 
+#change factor order
+DA_horizon_letters$model_id <- factor(DA_horizon_letters$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
+
 #now make a figure...
 ggplot(DA_horizon_letters, aes(model_id, as.factor(Horizon), fill=as.factor(letter))) + 
   ylab("Horizon (days)") + xlab("") + theme_bw() + geom_tile(width=0.8) +
@@ -1244,7 +1262,7 @@ ggplot(DA_horizon_letters, aes(model_id, as.factor(Horizon), fill=as.factor(lett
         legend.title = element_text(size = 6),legend.text  = element_text(size = 8), panel.spacing=unit(0, "cm"), legend.margin=margin(0,0,0,0),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   facet_grid(Depth_m~TempDynamics, scales="free_y",labeller = labeller(Depth_m = depths)) +
-  guides(fill=guide_legend(title="")) + scale_fill_brewer(type="div", palette=1, direction = -1)
-ggsave(file.path(lake_directory,"analysis/figures/posthoc_letters_horizon_depth_facets_fig8.jpg"),width=3.5, height=4)
+  guides(fill=guide_legend(title="")) + scale_fill_brewer(type="div", palette=6, direction = 1)
+ggsave(file.path(lake_directory,"analysis/figures/posthoc_letters_horizon_depth_facets_fig7.jpg"),width=3.5, height=4)
 
 

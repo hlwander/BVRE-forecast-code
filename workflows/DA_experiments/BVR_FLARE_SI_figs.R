@@ -259,7 +259,7 @@ ggplot(params, aes(datetime, mean, color=model_id)) + theme_bw() +
   scale_x_date(date_labels = "%b") + #ylab(expression("Temperature ("*~degree*C*")")) 
   geom_ribbon(aes(y = mean, ymin = mean-sd, ymax = mean+sd, color=model_id, fill=model_id), alpha=0.5) +
   guides(fill = guide_legend(title="DA frequency", override.aes = list(alpha=1)), color="none")
-#ggsave(file.path(lake_directory,"analysis/figures/paramRMSEvsHorizon.jpg"),width=3.5, height=4)
+#ggsave(file.path(lake_directory,"analysis/figures/paramevolvsHorizon.jpg"),width=3.5, height=4)
 
 #figuring out the date that DA parameters diverge
 mean(params$mean[params$variable=="lw_factor" & params$model_id=="Daily" & params$datetime >= "2021-04-01"])
