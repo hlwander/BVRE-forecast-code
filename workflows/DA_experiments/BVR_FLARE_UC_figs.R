@@ -53,22 +53,40 @@ all_DA_forecasts <- all_DA_forecasts[!(as.Date(all_DA_forecasts$datetime) %in% c
 
 #change model_id to be all uppercase
 all_DA_forecasts$model_id <- str_to_title(all_DA_forecasts$model_id)
+
+#only keep 2021 data
+all_DA_forecasts <- all_DA_forecasts[all_DA_forecasts$datetime<="2021-12-31",]
+
 #------------------------------------------------------------------------------#
 #calculate forecast skill metrics
 
 #forecast skill for each depth and horizon
-forecast_skill_depth_horizon <-  plyr::ddply(all_DA_forecasts, c("depth", "phen","horizon", "model_id"), function(x) { #phen instead of datetime?
+forecast_skill_depth_horizon <-  plyr::ddply(all_DA_forecasts, c("depth", "datetime","horizon", "model_id"), function(x) { #phen instead of datetime?
   data.frame(
     RMSE = sqrt(mean((x$mean - x$observation)^2, na.rm = TRUE)),
     MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
     pbias = 100 * (sum(x$mean - x$observation, na.rm = TRUE) / sum(x$observation, na.rm = TRUE)),
-    CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS,
-    variance = var(x$mean, na.rm=TRUE)
+    CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS
+  )
+}, .progress = plyr::progress_text(), .parallel = FALSE) 
+
+##add in mixed/stratified period
+forecast_skill_depth_horizon$phen <- ifelse(as.Date(forecast_skill_depth_horizon$datetime) <= as.Date(strat_date) & 
+                                              as.Date(forecast_skill_depth_horizon$datetime) >="2021-03-13","Stratified", "Mixed")
+
+#order DA frequencies
+forecast_skill_depth_horizon$model_id <- factor(forecast_skill_depth_horizon$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
+
+#calculate variance of mean for all days
+variance_depth_horizon <-  plyr::ddply(all_DA_forecasts, c("depth", "phen","horizon", "model_id"), function(x) {
+  data.frame(
+    variance = var(x$mean, na.rm=TRUE) #taking the variance of mean for all day
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
 #order DA frequencies
-forecast_skill_depth_horizon$model_id <- factor(forecast_skill_depth_horizon$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
+variance_depth_horizon$model_id <- factor(variance_depth_horizon$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
+
 
 #df with averaged forecast skill for all days (group by horizon, DA, and phen)
 forecast_horizon_avg <- plyr::ddply(all_DA_forecasts, c("horizon", "model_id", "phen"), function(x) {
@@ -260,6 +278,14 @@ median_RMSE_horizon <- data.frame("Depth_m" = c(rep(1,24),rep(5,24),rep(9,24)),
 
 mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$TempDynamics=="Mixed"])
 mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$TempDynamics=="Stratified"])
+
+mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1])
+mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==7])
+mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35])
+
+mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==1])
+mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==5])
+mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==9])
 
 mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Mixed"])
 mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Mixed"])
@@ -840,7 +866,7 @@ kw_horizons$model_id <- factor(kw_horizons$model_id, levels = c("Daily", "Weekly
 kw_horizons %>%
   group_by(model_id,depth,horizon,phen) %>%  # do the same calcs for each box
   mutate(value2 = filter_lims(RMSE)) %>%
-  ggplot(aes(model_id, value2, fill=as.factor(horizon))) +  ylab("RMSE") + xlab("")+
+  ggplot(aes(model_id, RMSE, fill=as.factor(horizon))) +  ylab("RMSE") + xlab("")+
   geom_boxplot(outlier.shape = NA) + theme_bw() + guides(fill=guide_legend(title="Horizon")) +
   geom_hline(yintercept=2, linetype='dashed', col = 'black', size=0.3)+ 
   scale_fill_manual(values=c("#81A665","#E0CB48","#D08151"),labels = c("1day", "7day", "35day")) +
@@ -1287,26 +1313,46 @@ all_DA_forecasts_yesIC$phen <- ifelse(all_DA_forecasts_yesIC$datetime <= as.POSI
 
 #remove n=6 days with ice-cover 
 all_DA_forecasts_yesIC <- all_DA_forecasts_yesIC[!(as.Date(all_DA_forecasts_yesIC$datetime) %in% c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
-                                                                                 as.Date("2021-02-13"),as.Date("2021-02-14"),as.Date("2021-02-15"))),]
+                                                                                                   as.Date("2021-02-13"),as.Date("2021-02-14"),as.Date("2021-02-15"))),]
 
 #change model_id to be all uppercase
 all_DA_forecasts_yesIC$model_id <- str_to_title(all_DA_forecasts_yesIC$model_id)
+
+#only keep 2021 data
+all_DA_forecasts_yesIC <- all_DA_forecasts_yesIC[all_DA_forecasts_yesIC$datetime<="2021-12-31",]
+
 #------------------------------------------------------------------------------#
 #calculate forecast skill metrics
 
 #forecast skill for each depth and horizon
-forecast_skill_depth_horizon_yesIC <-  plyr::ddply(all_DA_forecasts_yesIC, c("depth", "phen","horizon", "model_id"), function(x) {
+forecast_skill_depth_horizon_yesIC <-  plyr::ddply(all_DA_forecasts_yesIC, c("depth", "datetime","horizon", "model_id"), function(x) {
   data.frame(
     RMSE = sqrt(mean((x$mean - x$observation)^2, na.rm = TRUE)),
     MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
     pbias = 100 * (sum(x$mean - x$observation, na.rm = TRUE) / sum(x$observation, na.rm = TRUE)),
-    CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS,
-    variance = var(x$mean, na.rm=TRUE)
+    CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS
+  )
+}, .progress = plyr::progress_text(), .parallel = FALSE) 
+
+
+##add in mixed/stratified period
+forecast_skill_depth_horizon_yesIC$phen <- ifelse(as.Date(forecast_skill_depth_horizon$datetime) <= as.Date(strat_date) & 
+                                                    as.Date(forecast_skill_depth_horizon$datetime) >="2021-03-13","Stratified", "Mixed")
+
+
+#order DA frequencies
+forecast_skill_depth_horizon_yesIC$model_id <- factor(forecast_skill_depth_horizon_yesIC$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
+
+#calculate variance of mean for all days
+variance_depth_horizon_yesIC <-  plyr::ddply(all_DA_forecasts_yesIC, c("depth", "phen","horizon", "model_id"), function(x) {
+  data.frame(
+    variance = var(x$mean, na.rm=TRUE) 
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
 #order DA frequencies
-forecast_skill_depth_horizon_yesIC$model_id <- factor(forecast_skill_depth_horizon_yesIC$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
+variance_depth_horizon_yesIC$model_id <- factor(variance_depth_horizon_yesIC$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
+
 
 
 #df with averaged forecast skill for all days (group by horizon, DA, and phen)
@@ -1327,16 +1373,21 @@ forecast_horizon_avg_yesIC$model_id <- factor(forecast_horizon_avg_yesIC$model_i
 forecast_skill_depth_horizon$IC <- "no"
 forecast_skill_depth_horizon_yesIC$IC <- "yes"
 
+variance_depth_horizon$IC <- "no"
+variance_depth_horizon_yesIC$IC <- "yes"
+
 forecast_horizon_avg$IC <- "n"
 forecast_horizon_avg_yesIC$IC <- "y"
 
 #combine to make a massive df
 UC <- rbind(forecast_skill_depth_horizon_yesIC,forecast_skill_depth_horizon)
+UC_var <- rbind(variance_depth_horizon_yesIC, variance_depth_horizon)
 
 #round depth to nearest integer
 UC$depth <- ceiling(UC$depth)
-  
-  ggplot(subset(UC, depth %in% c(1,5,9)), aes(model_id, RMSE, fill=as.factor(IC))) +  ylab("RMSE") + xlab("")+
+UC_var$depth <- ceiling(UC_var$depth)
+
+ggplot(subset(UC, depth %in% c(1,5,9)), aes(model_id, RMSE, fill=as.factor(IC))) +  ylab("RMSE") + xlab("")+
   geom_boxplot(outlier.shape = NA) + theme_bw() + guides(fill=guide_legend(title="")) + geom_hline(yintercept=2,linetype="dashed") +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.31),
         legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
@@ -1346,14 +1397,14 @@ UC$depth <- ceiling(UC$depth)
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
 ggsave(file.path(lake_directory,"analysis/figures/UC_RMSEvsDAfreq_depth_facets_IC.jpg"),width=3.5, height=4)
 
- 
-  ggplot(subset(UC, depth %in% c(1,5,9)) ,aes(model_id, variance, fill=as.factor(IC))) +  ylab("variance") + xlab("")+
+
+ggplot(subset(UC_var, depth %in% c(1,5,9)) ,aes(model_id, variance, fill=as.factor(IC))) +  ylab("variance") + xlab("")+
   geom_boxplot(outlier.shape = NA) + theme_bw() + guides(fill=guide_legend(title="")) + 
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.31),
         legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
-  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) 
+  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
 ggsave(file.path(lake_directory,"analysis/figures/UC_variancevsDAfreq_depth_facets_IC.jpg"),width=3.5, height=4)
-#note that for these I calculated RMSE and variance by across phen rather than datetime...not sure how much that changes things...
+#note that for these I calculated variance by across phen rather than datetime...not sure how much that changes things...
