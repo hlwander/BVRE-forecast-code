@@ -236,7 +236,7 @@ ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_para
 #read in all forecasts 
 params_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/da_study"))
 params <- arrow::open_dataset(score_dir) |> collect() |>   
-  filter(variable %in% c("lw_factor","zone1temp","zone2temp"), horizon <=0)
+  filter(variable %in% c("lw_factor","zone1temp","zone2temp"), horizon >=0)
 
 #change datetime format
 params$datetime <- as.Date(params$datetime)
@@ -247,7 +247,7 @@ params$model_id <- str_to_title(params$model_id)
 #change DA factor order
 params$model_id <- factor(params$model_id, levels = c("Daily", "Weekly","Fortnightly","Monthly"))
 
-ggplot(params, aes(datetime, mean, color=model_id)) + theme_bw() +
+ggplot(subset(params,horizon==0), aes(datetime, mean, color=model_id)) + theme_bw() +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.6,0.98),
         legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
@@ -259,7 +259,7 @@ ggplot(params, aes(datetime, mean, color=model_id)) + theme_bw() +
   scale_x_date(date_labels = "%b") + #ylab(expression("Temperature ("*~degree*C*")")) 
   geom_ribbon(aes(y = mean, ymin = mean-sd, ymax = mean+sd, color=model_id, fill=model_id), alpha=0.5) +
   guides(fill = guide_legend(title="DA frequency", override.aes = list(alpha=1)), color="none")
-#ggsave(file.path(lake_directory,"analysis/figures/paramevolvsHorizon.jpg"),width=3.5, height=4)
+#ggsave(file.path(lake_directory,"analysis/figures/paramevolvstime_0day.jpg"),width=3.5, height=4)
 
 #figuring out the date that DA parameters diverge
 mean(params$mean[params$variable=="lw_factor" & params$model_id=="Daily" & params$datetime >= "2021-04-01"])
