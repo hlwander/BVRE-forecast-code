@@ -4,18 +4,6 @@
 #load libraries
 pacman::p_load(ggplot2,tidyverse,FSA,rcompanion)
 
-# filtering function - turns outliers into NAs to be removed
-filter_lims <- function(x){
-  l <- boxplot.stats(x)$stats[1]
-  u <- boxplot.stats(x)$stats[5]
-  
-  for (i in 1:length(x)){
-    x[i] <- ifelse(x[i]>l & x[i]<u, x[i], NA)
-  }
-  return(x)
-}
-
-
 #set wd
 lake_directory <- here::here()
 setwd(lake_directory)
@@ -1221,6 +1209,8 @@ mean(params$mean[params$variable=="lw_factor" & params$model_id=="Daily" & param
 mean(params$mean[params$variable=="lw_factor" & params$model_id=="Weekly" & params$datetime >= "2021-04-01"])
 mean(params$mean[params$variable=="lw_factor" & params$model_id=="Fortnightly" & params$datetime >= "2021-04-01"])
 mean(params$mean[params$variable=="lw_factor" & params$model_id=="Monthly" & params$datetime >= "2021-04-01"])
+
+last(params$mean[params$variable=="lw_factor" & params$model_id=="Daily"])
 
 mean(c(last(params$mean[params$variable=="lw_factor" & params$model_id=="Weekly"]),
        last(params$mean[params$variable=="lw_factor" & params$model_id=="Fortnightly"]),
