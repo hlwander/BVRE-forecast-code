@@ -49,72 +49,47 @@ in_situ_qaqc <- function(insitu_obs_fname,
     }
   }
   
-  #drop NA rows
-  d <- d[!is.na(d$observed),]
+  cuts <- tibble::tibble(cuts = as.integer(factor(config$depths_bins_top)),
+                         depth = config$depths_bins_top)
   
-  first_day  <- lubridate::as_datetime(paste0(lubridate::as_date(min(d$time)), " ", config$averaging_period_starting_hour))
-  first_day <- lubridate::force_tz(first_day, tzone = "UTC")
-
-  last_day <- lubridate::as_datetime(paste0(lubridate::as_date(max(d$time)), " ", config$averaging_period_starting_hour))
-  last_day <- lubridate::force_tz(last_day, tzone = "UTC")
-
-  full_time_local <- seq(first_day, last_day, by = "1 day")
-
-  d_clean <- NULL
-
-
-  for(i in 1:length(config$target_variable)){
-    print(paste0("Extracting ",config$target_variable[i]))
-    #depth_breaks <- sort(c(bins1, bins2))
-    time_breaks <- seq(first_day, last_day, by = config$averaging_period[i])
-
-    d_curr <- d %>%
-      dplyr::filter(variable == config$target_variable[i],
-                    method %in% config$measurement_methods[[i]]) %>% #NOTE, ADDED CTD AS METHOD SO WE HAVE TEMP AND DO DATA BEFORE 2020
-      dplyr::mutate(time_class = cut(time, breaks = time_breaks, labels = FALSE)) %>%
-      dplyr::group_by(time_class, depth) %>%
-      dplyr::summarize(observed = mean(observed, na.rm = TRUE), .groups = "drop") %>%
-      dplyr::mutate(time = time_breaks[time_class]) %>%
-      dplyr::mutate(variable = config$target_variable[i]) %>%
-      dplyr::select(time, depth, observed, variable) %>%
-      dplyr::mutate(date = lubridate::as_date(time))
-
-    if(config$averaging_period[i] == "1 hour"){
-      d_curr <- d_curr %>%
-      dplyr::mutate(hour = lubridate::hour(time)) %>%
-      dplyr::filter(hour == lubridate::hour(first_day))  #getting rid of this filter because I need more observations!
-    }else{
-      d_curr <- d_curr %>%
-        dplyr::mutate(hour = NA) %>%
-        dplyr::mutate(hour = as.numeric(hour))
-    }
-
-    d_curr <- d_curr %>% dplyr::select(-date)
-
-    d_clean <- rbind(d_clean,  d_curr) 
+  methods <- NULL
+  for(i in 1:length(config$measurement_methods)){
+    methods <- c(methods, paste(names(config$measurement_methods)[i], unlist(config$measurement_methods[[i]]), sep = "_"))
   }
-
-  d_clean <- d_clean %>% tidyr::drop_na(observed)
+  
+  d_clean <- d |>
+    dplyr::mutate(method = paste(variable, method, sep = "_")) |>
+    dplyr::mutate(cuts = cut(depth, breaks = config$depths_bins_top, include.lowest = TRUE, right = FALSE, labels = FALSE)) |>
+    dplyr::mutate(time = lubridate::as_date(time) + lubridate::hours(hour(time))) |>
+    dplyr::filter(lubridate::hour(time) == 0) |>
+    dplyr::filter(method %in% methods) |>
+    dplyr::group_by(cuts, variable, time) |>
+    dplyr::summarize(observed = mean(observed, na.rm = TRUE), .groups = "drop") |>
+    dplyr::left_join(cuts) |>
+    dplyr::select(time, depth, observed, variable) |>
+    tidyr::drop_na(observed)  |> 
+    dplyr::arrange(time)
 
   if(!is.na(secchi_fname)){
-
-    d_secchi <- extract_secchi(fname = secchi_fname,
+    
+    d_secchi <- extract_secchi(fname = file.path(secchi_fname),
                                input_file_tz = "EST",
                                focal_depths = config$focal_depths)
-
-    d_secchi <- d_secchi %>%
-      dplyr::mutate(time = lubridate::as_date(time)) %>%
-      dplyr::mutate(hour = 0) 
-
-    d_clean <- rbind(d_clean,d_secchi) 
+    
+    d_secchi <- d_secchi |>
+      mutate(time = lubridate::as_datetime(lubridate::as_date(time)))
+    
+    
+    d_clean <- rbind(d_clean,d_secchi)
   }
+  
 
   d_clean$site_id <- "bvre"
   
-  d_clean <- d_clean %>% 
-    dplyr::select(time, site_id, depth, observed, variable) |> 
-    dplyr::rename(datetime = time,
-                  observation = observed)
+  d_clean <- d_clean %>%
+    rename(datetime = time,
+           observation = observed) |>
+    select(datetime, site_id, depth, observation, variable)
   
   d_clean$observation <- round(d_clean$observation, digits = 4)
   
@@ -123,7 +98,6 @@ in_situ_qaqc <- function(insitu_obs_fname,
   }
   
   readr::write_csv(d_clean, cleaned_insitu_file)
-  
   return(cleaned_insitu_file)
 
 }

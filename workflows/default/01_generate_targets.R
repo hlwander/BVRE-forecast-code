@@ -18,6 +18,9 @@ sapply(files.sources[grepl(".R$", files.sources)], source)
 #' Generate the `config_obs` object and create directories if necessary
 
 config_obs <- FLAREr::initialize_obs_processing(lake_directory, observation_yml = "observation_processing.yml", config_set_name = config_set_name)
+config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
+
+
 dir.create(file.path(lake_directory, "targets", config_obs$site_id), showWarnings = FALSE)
 #' Clone or pull from data repositories
 
@@ -53,7 +56,9 @@ message("Successfully generated targets")
 
 FLAREr::put_targets(site_id = config_obs$site_id,
                     cleaned_insitu_file,
-                    cleaned_met_file,
-                    use_s3 = FALSE)
+                    cleaned_met_file = NA,
+                    cleaned_inflow_file = NA,
+                    use_s3 = config$run_config$use_s3,
+                    config = config)
 
 message("Successfully moved targets to s3 bucket")

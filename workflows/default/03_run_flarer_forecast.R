@@ -90,12 +90,33 @@ forecast_df <- FLAREr::write_forecast_arrow(da_forecast_output = da_forecast_out
                                             endpoint = config$s3$forecasts_parquet$endpoint,
                                             local_directory = file.path(lake_directory, "forecasts/parquet"))
 
+message("Writing arrow score")
+
+message("Grabbing last 16-days of forecasts")
+reference_datetime_format <- "%Y-%m-%d %H:%M:%S"
+past_days <- strftime(lubridate::as_datetime(forecast_df$reference_datetime[1]) - lubridate::days(config$run_config$forecast_horizon), tz = "UTC")
+
+vars <- FLAREr:::arrow_env_vars()
+s3 <- arrow::s3_bucket(bucket = config$s3$forecasts_parquet$bucket, endpoint_override = config$s3$forecasts_parquet$endpoint)
+past_forecasts <- arrow::open_dataset(s3) |>
+  dplyr::filter(model_id == forecast_df$model_id[1],
+                site_id == forecast_df$site_id[1],
+                reference_datetime > past_days) |>
+  dplyr::collect()
+FLAREr:::unset_arrow_vars(vars)
+
+message("Combining forecasts")
+combined_forecasts <- dplyr::bind_rows(forecast_df, past_forecasts)
+
+message("Scoring forecasts")
 FLAREr::generate_forecast_score_arrow(targets_file = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
-                                      forecast_df = forecast_df,
+                                      forecast_df = combined_forecasts,
                                       use_s3 = config$run_config$use_s3,
                                       bucket = config$s3$scores$bucket,
                                       endpoint = config$s3$scores$endpoint,
-                                      local_directory = file.path(lake_directory, "scores/parquet"))
+                                      local_directory = file.path(lake_directory, "scores/parquet"),
+                                      variable_types = c("state","parameter"))
+
 
 
 #Create EML Metadata

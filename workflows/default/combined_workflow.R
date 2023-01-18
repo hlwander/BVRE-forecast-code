@@ -20,26 +20,26 @@ if(!noaa_ready){
   }
 }
 
-config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
-if(!is.null(config$run_config$forecast_fails)){
-  if(config$run_config$forecast_fails > 0){
-    config$run_config$forecast_fails <- 0
-    FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file = NA, new_horizon = NA, day_advance = 1, new_start_datetime = FALSE)
-    noaa_ready <- FLAREr::check_noaa_present_arrow(lake_directory,
-                                                   configure_run_file,
-                                                   config_set_name = config_set_name)
-  }
-}
+#config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
+#if(!is.null(config$run_config$forecast_fails)){
+#  if(config$run_config$forecast_fails > 0){
+#    config$run_config$forecast_fails <- 0
+#    FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file = NA, new_horizon = NA, day_advance = 1, new_start_datetime = FALSE)
+#    noaa_ready <- FLAREr::check_noaa_present_arrow(lake_directory,
+#                                                   configure_run_file,
+#                                                   config_set_name = config_set_name)
+#  }
+#}
 
 
 if(noaa_ready){
   
-  if(!is.null(config$run_config$forecast_fails)){
-    config$run_config$forecast_fails <- config$run_config$forecast_fails + 1
-  }else{
-    config$run_config$forecast_fails <- 1
-  }
-  FLAREr::update_run_config(config, lake_directory, configure_run_file, new_start_datetime = FALSE)
+  #if(!is.null(config$run_config$forecast_fails)){
+  #  config$run_config$forecast_fails <- config$run_config$forecast_fails + 1
+  #}else{
+  #  config$run_config$forecast_fails <- 1
+  #}
+  #FLAREr::update_run_config(config, lake_directory, configure_run_file, new_start_datetime = FALSE)
   
   message("Generating targets")
   source(file.path("workflows", config_set_name, "01_generate_targets.R"))
@@ -59,8 +59,10 @@ if(noaa_ready){
   #message("Generating plots")
   #source(file.path("workflows", config_set_name, "04_visualize.R"))
   
-  config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
-  config$run_config$forecast_fails <- 0
-  FLAREr::update_run_config(config, lake_directory, configure_run_file, new_start_datetime = FALSE)
+  #config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
+  #config$run_config$forecast_fails <- 0
+  #FLAREr::update_run_config(config, lake_directory, configure_run_file, new_start_datetime = FALSE)
+  
+  RCurl::url.exists("https://hc-ping.com/8b5c849d-a5a6-4d44-980c-676472cf3c70", timeout = 5)
   
 }
