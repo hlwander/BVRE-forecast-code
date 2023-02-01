@@ -2,7 +2,12 @@
 #09 Sep 2022 HLW
 
 #load libraries
-pacman::p_load(dplyr,readr,ggplot2, FSA, AnalystHelper, rcompanion, rstatix, ggpubr, stringr)
+pacman::p_load(dplyr,readr,ggplot2, FSA, AnalystHelper, rcompanion, rstatix, ggpubr, stringr, egg)
+
+#function to calculate standard error 
+stderr <- function(x) {
+  sd(x,na.rm=TRUE)/sqrt(length(na.omit(x)))
+}
 
 
 #set wd
@@ -323,9 +328,9 @@ median(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_R
 median(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==7 & median_RMSE_horizon$TempDynamics=="Mixed"])
 median(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Mixed"])
 
-range(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Stratified"])
-range(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==7 & median_RMSE_horizon$TempDynamics=="Stratified"])
-range(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Stratified"])
+mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Stratified"])
+mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==7 & median_RMSE_horizon$TempDynamics=="Stratified"])
+mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Stratified"])
 
 mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Mixed" & median_RMSE_horizon$model_id=="Daily"])
 mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==7 & median_RMSE_horizon$TempDynamics=="Mixed" & median_RMSE_horizon$model_id=="Monthly"])
@@ -343,11 +348,11 @@ mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RM
 #calcualte percent difference of 35 and 1 day RMSE for mixed vs. stratified
 (mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Mixed"]) -
     mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Mixed"])) /
-  mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$TempDynamics=="Mixed"]) *100
+  mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$TempDynamics=="Mixed" & median_RMSE_horizon$Horizon_days!=7]) *100
 
 (mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Stratified"]) -
     mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Stratified"])) /
-  mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$TempDynamics=="Stratified"]) *100
+  mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$Horizon_days!=7]) *100
 
 #mixed vs stratified rmse across depths
 (mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Stratified"]) - 
@@ -380,23 +385,29 @@ names(depths) <- c("1","5","9")
 #order factor levels
 kw_horizons$model_id <- factor(kw_horizons$model_id, levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
-  ggplot(subset(kw_horizons, horizon %in% c(1,7,35) & depth %in% c(1,5,9)),
+  fig6 <- ggplot(subset(kw_horizons, horizon %in% c(1,7,35) & depth %in% c(1,5,9)),
          aes(model_id, RMSE, fill=as.factor(horizon))) +  ylab("RMSE") + xlab("")+
   geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="Horizon")) +
   geom_hline(yintercept=2, linetype='dashed', col = 'black', linewidth=0.3)+ ylim(0,3) +
   scale_fill_manual(values=c("#81A665","#E0CB48","#D08151"),labels = c("1day", "7day", "35day")) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.31),
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.77,0.31),
         legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   geom_text(data=letters,aes(x=model_id,y=0.2+max.RMSE,label=letter),hjust=0.1,vjust = -0.1, size=2.5) +
   facet_grid(depth~phen, scales="free_y",labeller = labeller(depth = depths)) 
+
+  tag_facet(fig6, open = "", close = ")", fontface = 1)  
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_fig6.jpg"),width=3.5, height=4)
 
+
 #NEW FIGURE 5!!
+forecast_skill_depth_horizon$model_id <- factor(forecast_skill_depth_horizon$model_id, 
+                                                levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
+
 #now make a plot for RMSE vs all horizons
-ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, RMSE, color=as.factor(model_id))) +  ylab("RMSE") + xlab("Horizon (days)")+
+fig5 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, RMSE, color=as.factor(model_id))) +  ylab("RMSE") + xlab("Horizon (days)")+
    geom_line() + theme_bw() + guides(fill=guide_legend(title="")) + geom_hline(yintercept = 2, linetype="dotted") + ylim(0,3) +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.89,0.75),
         legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
@@ -404,13 +415,32 @@ ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, R
         legend.title = element_blank(),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_color_manual(values=cb_friendly_2) 
+
+tag_facet(fig5, open = "", close = ")", fontface = 1)
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvshorizon_depth_facets_fig5.jpg"),width=3.5, height=4)
+
+ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, variance, color=as.factor(model_id))) +  ylab("Variance") + xlab("Horizon (days)")+
+  geom_line() + theme_bw() + guides(fill=guide_legend(title="")) + ylim(0,8.8) + geom_point() +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.89,0.75),
+        legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
+        legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
+        legend.title = element_blank(),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
+        axis.text.x = element_text(vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
+  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_color_manual(values=cb_friendly_2) 
+ggsave(file.path(lake_directory,"analysis/figures/Varvshorizon_depth_facets_fig5.jpg"),width=3.5, height=4)
+
+
+mean(forecast_skill_depth_horizon$variance[forecast_skill_depth_horizon$horizon ==35 &
+                               forecast_skill_depth_horizon$model_id=="Monthly"])
 
 forecast_skill_depth_horizon[forecast_skill_depth_horizon$phen=="Mixed" #& forecast_skill_depth_horizon$horizon ==5
                              &forecast_skill_depth_horizon$model_id=="Monthly" & forecast_skill_depth_horizon$depth==1,]
 
-forecast_skill_depth_horizon[forecast_skill_depth_horizon$phen=="Stratified" #& forecast_skill_depth_horizon$horizon ==5
+forecast_skill_depth_horizon[forecast_skill_depth_horizon$phen=="Stratified" #& forecast_skill_depth_horizon$horizon ==1
                              &forecast_skill_depth_horizon$model_id=="Fortnightly" & forecast_skill_depth_horizon$depth==9,]
+
+mean(forecast_skill_depth_horizon$RMSE[forecast_skill_depth_horizon$phen=="Stratified" & forecast_skill_depth_horizon$horizon >=12
+                                       &forecast_skill_depth_horizon$model_id=="Fortnightly" & forecast_skill_depth_horizon$depth==1])
 
 median(forecast_skill_depth_horizon$RMSE[forecast_skill_depth_horizon$phen=="Stratified" &
                                            forecast_skill_depth_horizon$depth==1 & 

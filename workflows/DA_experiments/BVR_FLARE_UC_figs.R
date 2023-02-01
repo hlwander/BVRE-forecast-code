@@ -2,7 +2,7 @@
 #29 Dec 2022
 
 #load libraries
-pacman::p_load(ggplot2,tidyverse,FSA,rcompanion,ggpubr)
+pacman::p_load(ggplot2,tidyverse,FSA,rcompanion,ggpubr, egg)
 
 #set wd
 lake_directory <- here::here()
@@ -11,13 +11,17 @@ setwd(lake_directory)
 #read in all forecasts 
 score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/UC"))
 all_DA_forecasts <- arrow::open_dataset(score_dir) |> collect() |>   
-  filter(!is.na(observation), variable == "temperature",horizon > 0)
+  filter(!is.na(observation), variable == "temperature",horizon > 1) #need to start on day 2 because this is actually day 1
+
 
 #need to round horizon becuase they are in decimal form for some reason...
 all_DA_forecasts$horizon <- ceiling(all_DA_forecasts$horizon)
 
 #round depths up to nearest m 
 all_DA_forecasts$depth <- ceiling(all_DA_forecasts$depth)
+
+#fix horizon issue because flare calls day 0 day 1 (so horizons go out to 36 days)
+all_DA_forecasts$horizon <- all_DA_forecasts$horizon - 1
 
 #add a group number so that I can average horizons later on
 all_DA_forecasts <- all_DA_forecasts %>% 
@@ -27,7 +31,7 @@ all_DA_forecasts <- all_DA_forecasts %>%
                            all_DA_forecasts$horizon <=20 & all_DA_forecasts$horizon > 15 ~ "16-20",
                            all_DA_forecasts$horizon <=25 & all_DA_forecasts$horizon > 20 ~ "21-25",
                            all_DA_forecasts$horizon <=30 & all_DA_forecasts$horizon > 25 ~ "26-30",
-                           all_DA_forecasts$horizon <=36 & all_DA_forecasts$horizon > 30 ~ "31-35"))
+                           all_DA_forecasts$horizon <=35 & all_DA_forecasts$horizon > 30 ~ "31-35"))
 
 strat_date<- "2021-11-07"
 
@@ -38,6 +42,9 @@ all_DA_forecasts$phen <- ifelse(all_DA_forecasts$datetime <= as.POSIXct(strat_da
 #remove n=6 days with ice-cover 
 all_DA_forecasts <- all_DA_forecasts[!(as.Date(all_DA_forecasts$datetime) %in% c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
                                                                                  as.Date("2021-02-13"),as.Date("2021-02-14"),as.Date("2021-02-15"))),]
+
+#drop 11m completely because some rows were NA when water level was low
+all_DA_forecasts <- all_DA_forecasts[!(all_DA_forecasts$depth==11),]
 
 #change model_id to be all uppercase
 all_DA_forecasts$model_id <- str_to_title(all_DA_forecasts$model_id)
@@ -59,9 +66,26 @@ forecast_skill_depth_horizon <-  plyr::ddply(all_DA_forecasts, c("depth","horizo
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
-
 #order DA frequencies
 forecast_skill_depth_horizon$model_id <- factor(forecast_skill_depth_horizon$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
+
+#quickly looking at vairance among dates in forecast period
+#add month column
+#all_DA_forecasts$month <- format(as.Date(all_DA_forecasts$reference_datetime),"%b")
+#
+#variance_2021_days <-  plyr::ddply(all_DA_forecasts, c("month","horizon", "model_id"), function(x) { #phen instead of datetime?
+#  data.frame(
+#    mean = mean(x$mean),
+#    sd = mean(x$sd),
+#     variance = (mean(x$sd))^2
+#  )
+#}, .progress = plyr::progress_text(), .parallel = FALSE) 
+#
+#
+#ggplot(subset(variance_2021_days, model_id=="Daily"), aes(horizon, sd)) + geom_line() +
+#  theme_bw() + facet_wrap(~month)
+
+
 
 
 #df with averaged forecast skill for all days (group by horizon, DA, and phen)
@@ -70,7 +94,8 @@ forecast_horizon_avg <- plyr::ddply(all_DA_forecasts, c("horizon", "model_id", "
     RMSE = sqrt(mean((x$mean - x$observation)^2, na.rm = TRUE)),
     MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
     pbias = 100 * (sum(x$mean - x$observation, na.rm = TRUE) / sum(x$observation, na.rm = TRUE)),
-    CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS
+    CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS,
+    variance = (mean(x$sd))^2
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
@@ -213,6 +238,7 @@ kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon==1
 dunn_mix_1d <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon==1] ~ 
                           as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$horizon==1]))
 rslt_mix_1d=toupper(cldList(P.adj ~ Comparison, data=dunn_mix_1d$res, threshold = 0.05)$Letter[c(1,4,2,3)])
+rslt_mix_1d <- c("a","ab","bc","c")
 median_mix_1d_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==1 & kw_horizons$model_id=="Daily"])
 median_mix_1d_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==1 & kw_horizons$model_id=="Weekly"])
 median_mix_1d_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==1 & kw_horizons$model_id=="Fortnightly"])
@@ -224,7 +250,7 @@ kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon==7
 dunn_mix_7d <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon==7] ~ 
                           as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$horizon==7]))
 rslt_mix_7d=toupper(cldList(P.adj ~ Comparison, data=dunn_mix_7d$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-rslt_mix_7d <- c("bc","a","b","c")
+rslt_mix_7d <- c("bc","a","ab","c")
 median_mix_7d_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==7 & kw_horizons$model_id=="Daily"])
 median_mix_7d_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==7 & kw_horizons$model_id=="Weekly"])
 median_mix_7d_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==7 & kw_horizons$model_id=="Fortnightly"])
@@ -236,7 +262,7 @@ kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon==3
 dunn_mix_35d <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon==35] ~ 
                            as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$horizon==35]))
 rslt_mix_35d=toupper(cldList(P.adj ~ Comparison, data=dunn_mix_35d$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-rslt_mix_35d <- c("c","a","ab","bc")
+rslt_mix_35d <- c("c","a","b","b")
 median_mix_35d_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==35 & kw_horizons$model_id=="Daily"])
 median_mix_35d_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==35 & kw_horizons$model_id=="Weekly"])
 median_mix_35d_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==35 & kw_horizons$model_id=="Fortnightly"])
@@ -654,10 +680,13 @@ mean(c(last(params$mean[params$variable=="zone2temp" & params$model_id=="Daily"]
 #read in all forecasts with IC on
 score_dir_yesIC <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/DA_study"))
 all_DA_forecasts_yesIC <- arrow::open_dataset(score_dir_yesIC) |> collect() |>   
-  filter(!is.na(observation), variable == "temperature",horizon > 0)
+  filter(!is.na(observation), variable == "temperature",horizon > 1)
 
 #round depths up to nearest m 
 all_DA_forecasts_yesIC$depth <- ceiling(all_DA_forecasts_yesIC$depth)
+
+#fix horizon issue because flare calls day 0 day 1 (so horizons go out to 36 days)
+all_DA_forecasts_yesIC$horizon <- all_DA_forecasts_yesIC$horizon - 1
 
 #add a group number so that I can average horizons later on
 all_DA_forecasts_yesIC <- all_DA_forecasts_yesIC %>% 
@@ -667,7 +696,7 @@ all_DA_forecasts_yesIC <- all_DA_forecasts_yesIC %>%
                            all_DA_forecasts_yesIC$horizon <=20 & all_DA_forecasts_yesIC$horizon > 15 ~ "16-20",
                            all_DA_forecasts_yesIC$horizon <=25 & all_DA_forecasts_yesIC$horizon > 20 ~ "21-25",
                            all_DA_forecasts_yesIC$horizon <=30 & all_DA_forecasts_yesIC$horizon > 25 ~ "26-30",
-                           all_DA_forecasts_yesIC$horizon <=36 & all_DA_forecasts_yesIC$horizon > 30 ~ "31-35"))
+                           all_DA_forecasts_yesIC$horizon <=35 & all_DA_forecasts_yesIC$horizon > 30 ~ "31-35"))
 
 strat_date<- "2021-11-07"
 
@@ -678,6 +707,8 @@ all_DA_forecasts_yesIC$phen <- ifelse(all_DA_forecasts_yesIC$datetime <= as.POSI
 #remove n=6 days with ice-cover 
 all_DA_forecasts_yesIC <- all_DA_forecasts_yesIC[!(as.Date(all_DA_forecasts_yesIC$datetime) %in% c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
                                                                                                    as.Date("2021-02-13"),as.Date("2021-02-14"),as.Date("2021-02-15"))),]
+#drop 11m completely because some rows were NA when water level was low
+all_DA_forecasts_yesIC <- all_DA_forecasts_yesIC[!(all_DA_forecasts_yesIC$depth==11),]
 
 #change model_id to be all uppercase
 all_DA_forecasts_yesIC$model_id <- str_to_title(all_DA_forecasts_yesIC$model_id)
@@ -709,7 +740,8 @@ forecast_horizon_avg_yesIC <- plyr::ddply(all_DA_forecasts_yesIC, c("horizon", "
     RMSE = sqrt(mean((x$mean - x$observation)^2, na.rm = TRUE)),
     MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
     pbias = 100 * (sum(x$mean - x$observation, na.rm = TRUE) / sum(x$observation, na.rm = TRUE)),
-    CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS
+    CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS,
+    variance = (mean(x$sd))^2
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
@@ -748,10 +780,6 @@ UC_depth <- rbind(forecast_depth_avg_yesIC,forecast_depth_avg)
 UC$depth <- ceiling(UC$depth)
 UC_depth$depth <- ceiling(UC_depth$depth)
 
-#only select 1-10m depths because water level was <11m for parts of 2021 so some NAs
-UC_depth <- UC_depth[!(UC_depth$depth==11),]
-UC <- UC[!(UC$depth==11),]
-
 ggplot(subset(UC_depth, depth %in% c(1,5,9)), aes(model_id, RMSE, fill=as.factor(IC))) +  ylab("RMSE") + xlab("")+
   geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="")) + geom_hline(yintercept=2,linetype="dashed") +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.7,0.29),
@@ -773,7 +801,7 @@ ggsave(file.path(lake_directory,"analysis/figures/UC_RMSEvsDAfreq_depth_facets_I
 #ggsave(file.path(lake_directory,"analysis/figures/UC_RMSEvsDAfreq_depth_facets_IC_1day.jpg"),width=3.5, height=4)
 
 
-ggplot(subset(UC_depth, depth %in% c(1,5,9)) ,aes(model_id, variance, fill=as.factor(IC))) +  ylab("variance") + xlab("")+
+fig8 <- ggplot(subset(UC_depth, depth %in% c(1,5,9)) ,aes(model_id, variance, fill=as.factor(IC))) +  ylab("variance") + xlab("")+
   geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="")) + 
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.31),
         legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
@@ -781,10 +809,21 @@ ggplot(subset(UC_depth, depth %in% c(1,5,9)) ,aes(model_id, variance, fill=as.fa
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
+
+tag_facet(fig8, open = "", close = ")", fontface = 1)  
 ggsave(file.path(lake_directory,"analysis/figures/UC_variancevsDAfreq_depth_facets_IC.jpg"),width=3.5, height=4)
 
-mean(UC_depth$variance[UC_depth$phen=="Mixed" & UC_depth$IC=="yes"])
-mean(UC_depth$variance[UC_depth$phen=="Mixed" & UC_depth$IC=="no"])
+mean(UC_depth$variance[UC_depth$phen=="Mixed" & UC_depth$IC=="yes IC"])
+mean(UC_depth$variance[UC_depth$phen=="Mixed" & UC_depth$IC=="no IC"])
 
-mean(UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="yes"])
-mean(UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="no"])
+sd(UC_depth$variance[UC_depth$phen=="Mixed" & UC_depth$IC=="yes IC"])
+sd(UC_depth$variance[UC_depth$phen=="Mixed" & UC_depth$IC=="no IC"])
+
+mean(UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="yes IC" & UC_depth$depth==1])
+mean(UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="no IC"& UC_depth$depth==1])
+
+UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="yes IC" & UC_depth$depth==5 & UC_depth$model_id=="Monthly"]
+UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="no IC"& UC_depth$depth==5 & UC_depth$model_id=="Monthly"]
+
+UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="yes IC" & UC_depth$depth==9 & UC_depth$model_id=="Monthly"]
+UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="no IC"& UC_depth$depth==9 & UC_depth$model_id=="Monthly"]

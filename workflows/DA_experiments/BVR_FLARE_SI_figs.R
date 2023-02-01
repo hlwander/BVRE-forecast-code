@@ -1,7 +1,7 @@
 #BVR FLARE SI figs
 
 #load libraries
-pacman::p_load(reshape2)
+pacman::p_load(reshape2, egg, dplyr, stringr)
 
 #inflation parameter figs (fixed, 1.02, 1.04)
 #and different start days (27nov, 24nov, 22nov)
@@ -237,8 +237,8 @@ ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_para
 #parameter evolution figs 
 #read in all forecasts 
 params_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/da_study"))
-params <- arrow::open_dataset(score_dir) |> collect() |>   
-  filter(variable %in% c("lw_factor","zone1temp","zone2temp"), horizon >=0)
+params <- arrow::open_dataset(params_dir) |> collect() |>   
+  filter(variable %in% c("lw_factor","zone1temp","zone2temp"), horizon >=1)
 
 #change datetime format
 params$datetime <- as.Date(params$datetime)
@@ -246,11 +246,14 @@ params$datetime <- as.Date(params$datetime)
 #change model_id to be all uppercase
 params$model_id <- str_to_title(params$model_id)
 
+#fix horizon issue because flare calls day 0 day 1 (so horizons go out to 36 days)
+params$horizon <- params$horizon - 1
+
 #change DA factor order
 params$model_id <- factor(params$model_id, levels = c("Daily", "Weekly","Fortnightly","Monthly"))
 
-ggplot(subset(params,horizon==0), aes(datetime, mean, color=model_id)) + theme_bw() +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.6,0.98),
+fig9 <- ggplot(subset(params,horizon==1), aes(as.Date(datetime), mean, color=model_id)) + theme_bw() +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.67,0.98),
         legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
@@ -260,8 +263,10 @@ ggplot(subset(params,horizon==0), aes(datetime, mean, color=model_id)) + theme_b
   facet_wrap(~variable, scales="free_y",ncol=1) + ylab("parameter")+ xlab("")+
   scale_x_date(date_labels = "%b") + #ylab(expression("Temperature ("*~degree*C*")")) 
   geom_ribbon(aes(y = mean, ymin = mean-sd, ymax = mean+sd, color=model_id, fill=model_id), alpha=0.5) +
-  guides(fill = guide_legend(title="DA frequency", override.aes = list(alpha=1)), color="none")
-#ggsave(file.path(lake_directory,"analysis/figures/paramevolvstime_0day.jpg"),width=3.5, height=4)
+  guides(fill = guide_legend(title="", override.aes = list(alpha=1)), color="none")
+
+tag_facet(fig9, open = "", close = ")", fontface = 1, x=as.Date("2021-01-01"), hjust=0.7)
+#ggsave(file.path(lake_directory,"analysis/figures/paramevolvstime_1day.jpg"),width=3.5, height=4)
 
 #figuring out the date that DA parameters diverge
 mean(params$mean[params$variable=="lw_factor" & params$model_id=="Daily" & params$datetime >= "2021-04-01"])
@@ -269,6 +274,12 @@ mean(params$mean[params$variable=="lw_factor" & params$model_id=="Daily" & param
 mean(params$mean[params$variable=="lw_factor" & params$model_id=="Weekly" & params$datetime >= "2021-04-01"])
 mean(params$mean[params$variable=="lw_factor" & params$model_id=="Fortnightly" & params$datetime >= "2021-04-01"])
 mean(params$mean[params$variable=="lw_factor" & params$model_id=="Monthly" & params$datetime >= "2021-04-01"])
+
+mean(c(mean(params$mean[params$variable=="zone2temp" & params$model_id=="Weekly" & params$datetime >= "2021-04-01"]),
+       mean(params$mean[params$variable=="zone2temp" & params$model_id=="Fortnightly" & params$datetime >= "2021-04-01"]),
+       mean(params$mean[params$variable=="zone2temp" & params$model_id=="Monthly" & params$datetime >= "2021-04-01"])))
+
+range(params$mean[params$variable=="zone1temp" & params$model_id!="Daily" & params$datetime >= "2021-04-01"])
 
 mean(c(last(params$mean[params$variable=="lw_factor" & params$model_id=="Weekly"]),
        last(params$mean[params$variable=="lw_factor" & params$model_id=="Fortnightly"]),
