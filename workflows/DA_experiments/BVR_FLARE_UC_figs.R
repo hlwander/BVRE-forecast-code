@@ -780,7 +780,7 @@ UC_depth <- rbind(forecast_depth_avg_yesIC,forecast_depth_avg)
 UC$depth <- ceiling(UC$depth)
 UC_depth$depth <- ceiling(UC_depth$depth)
 
-ggplot(subset(UC_depth, depth %in% c(1,5,9)), aes(model_id, RMSE, fill=as.factor(IC))) +  ylab("RMSE") + xlab("")+
+IC <- ggplot(subset(UC_depth, depth %in% c(1,5,9)), aes(model_id, RMSE, fill=as.factor(IC))) +  ylab("RMSE") + xlab("")+
   geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="")) + geom_hline(yintercept=2,linetype="dashed") +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.7,0.29),
         legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
@@ -788,6 +788,8 @@ ggplot(subset(UC_depth, depth %in% c(1,5,9)), aes(model_id, RMSE, fill=as.factor
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
+
+tag_facet2(IC, fontface = 1, hjust=0, size=3, tag_pool = c("a","b","c","d","e","f"))
 ggsave(file.path(lake_directory,"analysis/figures/UC_RMSEvsDAfreq_depth_facets_IC_allhorizons.jpg"),width=3.5, height=4)
 
 #ggplot(subset(UC, depth %in% c(1,5,9) & horizon==1), aes(model_id, RMSE, fill=as.factor(IC))) +  ylab("RMSE") + xlab("")+
@@ -810,7 +812,7 @@ fig8 <- ggplot(subset(UC_depth, depth %in% c(1,5,9)) ,aes(model_id, variance, fi
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
 
-tag_facet(fig8, open = "", close = ")", fontface = 1)  
+tag_facet2(fig8, fontface = 1, size=3, tag_pool = c("a","b","c","d","e","f"))  
 ggsave(file.path(lake_directory,"analysis/figures/UC_variancevsDAfreq_depth_facets_IC.jpg"),width=3.5, height=4)
 
 mean(UC_depth$variance[UC_depth$phen=="Mixed" & UC_depth$IC=="yes IC"])

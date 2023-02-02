@@ -4,11 +4,16 @@
 #load libraries
 pacman::p_load(dplyr,readr,ggplot2, FSA, AnalystHelper, rcompanion, rstatix, ggpubr, stringr, egg)
 
-#function to calculate standard error 
-stderr <- function(x) {
-  sd(x,na.rm=TRUE)/sqrt(length(na.omit(x)))
+#change tag_facet code
+tag_facet2 <- function(p, open = "(", close = ")", tag_pool = letters, x = -Inf, y = Inf, 
+                       hjust = -0.5, vjust = 1.5, fontface = 2, family = "", ...) {
+  
+  gb <- ggplot_build(p)
+  lay <- gb$layout$layout
+  tags <- cbind(lay, label = paste0(open, tag_pool[lay$PANEL], close), x = x, y = y)
+  p + geom_text(data = tags, aes_string(x = "x", y = "y", label = "label"), ..., hjust = hjust, 
+                vjust = vjust, fontface = fontface, family = family, inherit.aes = FALSE)
 }
-
 
 #set wd
 lake_directory <- here::here()
@@ -368,7 +373,7 @@ mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RM
   mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==9]) *100
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#### FIGURE 6: 1,5,9m depth facets for each DA frequency for 1,7,and 35-day ahead forecasts  ####
+#### FIGURE 5: 1,5,9m depth facets for each DA frequency for 1,7,and 35-day ahead forecasts  ####
 letters <- data.frame("depth"= c(rep(1,8),rep(5,8),rep(9,8)),
                       "horizon" = rep(c(1,7,35),8),
                       "model_id" = rep(c("Daily","Weekly","Fortnightly","Monthly"),6),
@@ -385,7 +390,7 @@ names(depths) <- c("1","5","9")
 #order factor levels
 kw_horizons$model_id <- factor(kw_horizons$model_id, levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
-  fig6 <- ggplot(subset(kw_horizons, horizon %in% c(1,7,35) & depth %in% c(1,5,9)),
+  fig5 <- ggplot(subset(kw_horizons, horizon %in% c(1,7,35) & depth %in% c(1,5,9)),
          aes(model_id, RMSE, fill=as.factor(horizon))) +  ylab("RMSE") + xlab("")+
   geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="Horizon")) +
   geom_hline(yintercept=2, linetype='dashed', col = 'black', linewidth=0.3)+ ylim(0,3) +
@@ -398,16 +403,16 @@ kw_horizons$model_id <- factor(kw_horizons$model_id, levels = c("Daily", "Weekly
   geom_text(data=letters,aes(x=model_id,y=0.2+max.RMSE,label=letter),hjust=0.1,vjust = -0.1, size=2.5) +
   facet_grid(depth~phen, scales="free_y",labeller = labeller(depth = depths)) 
 
-  tag_facet(fig6, open = "", close = ")", fontface = 1)  
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_fig6.jpg"),width=3.5, height=4)
+  tag_facet(fig5, fontface = 1, hjust=-0.01, size=3)  
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_fig5.jpg"),width=3.5, height=4)
 
 
-#NEW FIGURE 5!!
+#NEW FIGURE 4!!
 forecast_skill_depth_horizon$model_id <- factor(forecast_skill_depth_horizon$model_id, 
                                                 levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
 #now make a plot for RMSE vs all horizons
-fig5 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, RMSE, color=as.factor(model_id))) +  ylab("RMSE") + xlab("Horizon (days)")+
+fig4 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, RMSE, color=as.factor(model_id))) +  ylab("RMSE") + xlab("Horizon (days)")+
    geom_line() + theme_bw() + guides(fill=guide_legend(title="")) + geom_hline(yintercept = 2, linetype="dotted") + ylim(0,3) +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.89,0.75),
         legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
@@ -416,8 +421,8 @@ fig5 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(ho
         axis.text.x = element_text(vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_color_manual(values=cb_friendly_2) 
 
-tag_facet(fig5, open = "", close = ")", fontface = 1)
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvshorizon_depth_facets_fig5.jpg"),width=3.5, height=4)
+tag_facet(fig4, fontface = 1, size=3)
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvshorizon_depth_facets_fig4.jpg"),width=3.5, height=4)
 
 ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, variance, color=as.factor(model_id))) +  ylab("Variance") + xlab("Horizon (days)")+
   geom_line() + theme_bw() + guides(fill=guide_legend(title="")) + ylim(0,8.8) + geom_point() +
@@ -458,13 +463,15 @@ forecast_horizon_avg$RMSE_bins <- ifelse(forecast_horizon_avg$RMSE < 0.5, 0.5, #
                                                                      ifelse(forecast_horizon_avg$RMSE >= 2.5, 3, 0)))))) # 2.5 - 3 
 
 #figure for horizon vs frequency to compare forecast skill
-ggplot(forecast_horizon_avg, aes(model_id, horizon, fill=RMSE_bins)) + 
+figs8 <- ggplot(forecast_horizon_avg, aes(model_id, horizon, fill=RMSE_bins)) + 
   ylab("Horizon (days)") + theme_bw() + facet_wrap(~phen) + geom_tile(width=0.8) + xlab("") +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), panel.spacing=unit(0, "cm"),
         panel.grid.major = element_blank(),panel.grid.minor = element_blank())+
   guides(fill=guide_legend(title="RMSE")) +  scale_fill_gradientn(labels=c(
     "< 0.5","0.5 - 1.0","1.0 - 1.5","1.5 - 2.0","2.0 - 2.5","2.5 - 3.0"),colors = hcl.colors(4, "BuPu")) 
+
+tag_facet2(figs8, fontface = 1, hjust=0, tag_pool = c("a","b"), size=3) 
 ggsave(file.path(lake_directory,"analysis/figures/HorizonvsDA_tileplot_figS8.jpg"),width=4, height=3.5)
 
 #median mixed vs stratified period rmse across different horizons
@@ -472,7 +479,7 @@ median(forecast_horizon_avg$RMSE_bins[forecast_horizon_avg$phen=="Mixed" & forec
 median(forecast_horizon_avg$RMSE_bins[forecast_horizon_avg$phen=="Stratified" & forecast_horizon_avg$horizon==2 & forecast_horizon_avg$model_id=="Weekly"])
 
 #------------------------------------------------------------------------------------------------#
-# Data assimilation figure 4
+# Data assimilation figure 8
 DA <- all_DA_forecasts
 
 #pull out 2 horizons for fig 4 (mixed vs stratified)
@@ -502,20 +509,24 @@ DA_sub_final$model_id <- factor(DA_sub_final$model_id, levels = c("Daily", "Week
 #change order of DA frequencies so daily is plotted on top
 DA_sub_final$model_id <- factor(DA_sub_final$model_id, levels=rev(levels(DA_sub_final$model_id)))
 
-ggplot(subset(DA_sub_final, horizon==1 & depth %in% c(1,5,9)), aes(datetime, forecast_mean, color=model_id)) + 
+fig8 <- ggplot(subset(DA_sub_final, horizon==1 & depth %in% c(1,5,9)), aes(datetime, forecast_mean, color=model_id)) + 
   geom_ribbon(aes(x=datetime, y = forecast_mean, ymin = forecast_mean-forecast_sd, ymax = forecast_mean+forecast_sd, 
                   color=model_id, fill=model_id),alpha=0.4)  + theme_bw() + 
   #geom_line(aes(datetime, forecast_mean), size=0.2, data = . %>% filter(model_id %in% c("Daily"))) +
   geom_point(aes(x=datetime, y=observed), col="black", size=0.3) +  
   facet_wrap(depth~phen, scales = "free", labeller = labeller(depth=depths,.multi_line = FALSE),ncol = 2) + scale_x_date() +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.76,0.985),
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.76,0.41),
         legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(), legend.key=element_rect(fill=NA),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 4.5),legend.text  = element_text(size = 4.5), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   ylab(expression("Temperature ("*~degree*C*")")) + xlab("")  + scale_color_manual(values=rev(cb_friendly_2)) + scale_fill_manual(values=rev(cb_friendly_2)) +
   guides(fill = guide_legend(title="", override.aes = list(alpha=1),reverse = TRUE), color="none")
-ggsave(file.path(lake_directory,"analysis/figures/AssimilationVSdatafreq_fig4.jpg"), width=3.5, height=4) 
+
+tag_facet2(fig8, fontface = 1, hjust=0.3, size=3,
+           tag_pool = c("a","b","c","d","e","f"), 
+           x=c(as.Date("2021-01-01"),as.Date("2021-06-24")))
+ggsave(file.path(lake_directory,"analysis/figures/AssimilationVSdatafreq_fig8.jpg"), width=3.5, height=4) 
 
 #uncertainty range across depths and mixed vs stratified periods
 ((mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Monthly"]) -
@@ -580,7 +591,7 @@ ggplot(sub) +   theme_bw() +
 ggsave(file.path(lake_directory,"analysis/figures/2021_watertemp_mixedVstratified.jpg"))
 
 #-------------------------------------------------------------------------------#
-# Fig 7 - fig to compare forecast skill across horizons and depths 
+# Fig 6 - fig to compare forecast skill across horizons and depths 
 
 #test normality √ (but variances are not homogenous so stick w/ KW)
 ggpubr::ggqqplot(kw_horizons$RMSE)
@@ -619,26 +630,31 @@ horiz <- ggplot(median_RMSE_horizon, aes(model_id, as.factor(Horizon_days), fill
   facet_grid(~TempDynamics, scales="free_y",labeller = labeller(Depth_m = depths)) +
   guides(fill=guide_legend(title=expression(paste("RMSE (",degree,"C)")))) + scale_fill_brewer(type="seq", 
     palette=7, direction = -1, labels = c("< 0.5", "0.5 - 1", "1 - 1.5", "1.5 - 2", "2 - 2.5", "> 2.5"))
+horizon_letters <- tag_facet2(horiz, fontface = 1, hjust=0, size=3,
+           tag_pool = c("a","b"))
+
 
 depth <- ggplot(median_RMSE_depth, aes(model_id, as.factor(Depth_m), fill=as.factor(RMSE_bins))) + 
   ylab("Depth (m)") + xlab("") + theme_bw() + geom_tile(width=0.8) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "none",
         legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
         plot.margin = unit(c(-0.6,0.05,-0.2,0.1), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 6),legend.text  = element_text(size = 8), panel.spacing=unit(0, "cm"), legend.margin=margin(0,0,0,0),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   facet_grid(~TempDynamics, scales="free_y",labeller = labeller(Depth_m = depths)) +
-  guides(fill=guide_legend(title=expression(paste("RMSE (",degree,"C)")))) + scale_fill_manual( 
+   scale_fill_manual( 
     values = c("#E6550D","#FD8D3C","#FDAE6B","#FDD0A2","#FEEDDE"), labels = c(
       "0.5 - 1", "1 - 1.5", "1.5 - 2", "2 - 2.5", "> 2.5"))
+depth_letters <- tag_facet2(depth, fontface = 1, hjust=0, size=3,
+                              tag_pool = c("c","d"))
 
 #combine depth and horizon plots
-ggarrange(horiz, depth, 
-          ncol = 1, nrow = 2,
+ggarrange(horizon_letters, depth_letters, 
+          ncol = 1, nrow=2,
           common.legend = TRUE,
-          legend="right")
+          legend="right") + geom_text(x=0.3, y=15, label="a")
 
-ggsave(file.path(lake_directory,"analysis/figures/RMSE_bins_horizon_depth_facets_fig7.jpg"),width=3.5, height=4)
+ggsave(file.path(lake_directory,"analysis/figures/RMSE_bins_horizon_depth_facets_fig6.jpg"),width=3.5, height=4)
 
 #-------------------------------------------------------------------------------#
 #CRPS fig across mixed vs strat, depths, and horizons (fig 4 but for CRPS)
@@ -803,7 +819,7 @@ names(depths) <- c("1","5","9")
 #order factor levels
 kw_horizons$model_id <- factor(kw_horizons$model_id, levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
-ggplot(subset(kw_horizons, horizon %in% c(1,7,35) & depth %in% c(1,5,9)),
+figs1 <- ggplot(subset(kw_horizons, horizon %in% c(1,7,35) & depth %in% c(1,5,9)),
        aes(model_id, RMSE, fill=as.factor(horizon))) +  ylab("CRPS") + xlab("")+ ylim(0,3) +
   geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="Horizon")) +
   scale_fill_manual(values=c("#81A665","#E0CB48","#D08151"),labels = c("1day", "7day", "35day")) +
@@ -814,6 +830,9 @@ ggplot(subset(kw_horizons, horizon %in% c(1,7,35) & depth %in% c(1,5,9)),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   geom_text(data=letters,aes(x=model_id,y=0.2+max.RMSE,label=letter),hjust=0.1,vjust = -0.1, size=2.5) +
   facet_grid(depth~phen, scales="free_y",labeller = labeller(depth = depths)) 
+
+tag_facet2(figs1, fontface = 1, hjust=0, size=3,
+                              tag_pool = c("a","b","c","d","e","f"))
 ggsave(file.path(lake_directory,"analysis/figures/CRPSvsDAfreq_depth_facets_figs1.jpg"),width=3.5, height=4)
 
 
