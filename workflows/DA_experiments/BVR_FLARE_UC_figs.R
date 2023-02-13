@@ -66,26 +66,55 @@ forecast_skill_depth_horizon <-  plyr::ddply(all_DA_forecasts, c("depth","horizo
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
-#order DA frequencies
-forecast_skill_depth_horizon$model_id <- factor(forecast_skill_depth_horizon$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
-#quickly looking at vairance among dates in forecast period
+#quickly looking at variance among dates in forecast period
 #add month column
-#all_DA_forecasts$month <- format(as.Date(all_DA_forecasts$reference_datetime),"%b")
-#
-#variance_2021_days <-  plyr::ddply(all_DA_forecasts, c("month","horizon", "model_id"), function(x) { #phen instead of datetime?
-#  data.frame(
-#    mean = mean(x$mean),
-#    sd = mean(x$sd),
-#     variance = (mean(x$sd))^2
-#  )
-#}, .progress = plyr::progress_text(), .parallel = FALSE) 
-#
-#
-#ggplot(subset(variance_2021_days, model_id=="Daily"), aes(horizon, sd)) + geom_line() +
-#  theme_bw() + facet_wrap(~month)
+all_DA_forecasts$month <- format(as.Date(all_DA_forecasts$reference_datetime),"%b")
+
+variance_2021_months <-  plyr::ddply(all_DA_forecasts, c("month","horizon", "model_id","depth"), function(x) { #phen instead of datetime?
+  data.frame(
+    mean = mean(x$mean),
+    sd = mean(x$sd),
+    variance = (mean(x$sd))^2
+  )
+}, .progress = plyr::progress_text(), .parallel = FALSE) 
 
 
+ggplot(subset(variance_2021_months, model_id=="Daily" & depth==1), aes(horizon, variance)) + geom_line() +
+  theme_bw() + facet_wrap(~month)
+
+
+#averaging across all months
+variance_2021_days_year <-  plyr::ddply(all_DA_forecasts, c("horizon", "model_id"), function(x) { #phen instead of datetime?
+  data.frame(
+    mean = mean(x$mean),
+    sd = mean(x$sd),
+    variance = (mean(x$sd))^2
+  )
+}, .progress = plyr::progress_text(), .parallel = FALSE) 
+
+ggplot(subset(variance_2021_days_year, model_id=="Daily"), aes(horizon, variance)) +
+  geom_line() + theme_bw() 
+
+variance_2021_days <-  plyr::ddply(all_DA_forecasts, c("datetime","horizon", "model_id","depth"), function(x) { #phen instead of datetime?
+  data.frame(
+    mean = mean(x$mean),
+    sd = mean(x$sd),
+    variance = (mean(x$sd))^2
+  )
+}, .progress = plyr::progress_text(), .parallel = FALSE) 
+
+#only select april
+
+variance_2021_days$datetime <- as.Date(variance_2021_days$datetime)
+variance_2021_april <- variance_2021_days[variance_2021_days$datetime %in% 
+                                            seq(as.Date("2021-04-01"),as.Date("2021-04-30"),by="day"),]
+
+
+#look at variance for every day in april to see which noaa forecasts may be problematic 
+ggplot(subset(variance_2021_april, model_id=="Daily" & depth==1),
+       aes(horizon, variance)) + geom_vline(xintercept=16, linetype=2) +
+  geom_line() + theme_bw()+facet_wrap(~datetime)
 
 
 #df with averaged forecast skill for all days (group by horizon, DA, and phen)
@@ -763,14 +792,14 @@ forecast_depth_avg_yesIC <- plyr::ddply(all_DA_forecasts_yesIC, c("depth", "mode
 forecast_depth_avg_yesIC$model_id <- factor(forecast_depth_avg_yesIC$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
 #add IC y/n column
-forecast_skill_depth_horizon$IC <- "no IC"
-forecast_skill_depth_horizon_yesIC$IC <- "yes IC"
+forecast_skill_depth_horizon$IC <- "no"
+forecast_skill_depth_horizon_yesIC$IC <- "yes"
 
 forecast_horizon_avg$IC <- "n"
 forecast_horizon_avg_yesIC$IC <- "y"
 
-forecast_depth_avg$IC <- "no IC"
-forecast_depth_avg_yesIC$IC <- "yes IC"
+forecast_depth_avg$IC <- "no"
+forecast_depth_avg_yesIC$IC <- "yes"
 
 #combine to make a massive df
 UC <- rbind(forecast_skill_depth_horizon_yesIC,forecast_skill_depth_horizon)
@@ -781,9 +810,9 @@ UC$depth <- ceiling(UC$depth)
 UC_depth$depth <- ceiling(UC_depth$depth)
 
 IC <- ggplot(subset(UC_depth, depth %in% c(1,5,9)), aes(model_id, RMSE, fill=as.factor(IC))) +  ylab("RMSE") + xlab("")+
-  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="")) + geom_hline(yintercept=2,linetype="dashed") +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.7,0.29),
-        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
+  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="IC")) + geom_hline(yintercept=2,linetype="dashed") +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
+        legend.background = element_blank(), panel.grid.minor = element_blank(), legend.box.margin=margin(-10,-1,-10,-10),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
@@ -804,9 +833,9 @@ ggsave(file.path(lake_directory,"analysis/figures/UC_RMSEvsDAfreq_depth_facets_I
 
 
 fig8 <- ggplot(subset(UC_depth, depth %in% c(1,5,9)) ,aes(model_id, variance, fill=as.factor(IC))) +  ylab("variance") + xlab("")+
-  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="")) + 
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.31),
-        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
+  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="IC")) + 
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
+        legend.background = element_blank(), panel.grid.minor = element_blank(), legend.box.margin=margin(-10,-1,-10,-10),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +

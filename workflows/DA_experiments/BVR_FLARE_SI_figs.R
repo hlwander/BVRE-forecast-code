@@ -222,31 +222,33 @@ start_dates$depth <- ceiling(start_dates$depth)
 params$depth <- ceiling(params$depth)
 
 #FIGS
-start_dates <- ggplot(subset(start_dates, depth %in% c(1,5,9)),
-                      aes(DA, RMSE, fill=as.factor(da_start_date))) +  ylab("RMSE") + xlab("")+
-  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="")) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.31),
-        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
+startdates <- ggplot(subset(start_dates, depth %in% c(1,5,9)),
+                     aes(DA, RMSE, fill=as.factor(da_start_date))) +  ylab("RMSE") + xlab("")+
+  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="Start date")) +
+  geom_hline(yintercept=2, linetype='dashed', col = 'black', linewidth=0.3)+ ylim(0,3.3) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
+        legend.background = element_blank(), panel.grid.minor = element_blank(), legend.box.margin=margin(-10,-1,-10,-10),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) 
 
-tag_facet2(start_dates, fontface = 1, hjust=0, size=3,
+tag_facet2(startdates, fontface = 1, hjust=0, size=3,
            tag_pool = c("a","b","c","d","e","f"))
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_start_dates.jpg"),width=3.5, height=4)
 
-params <- ggplot(subset(params, depth %in% c(1,5,9)),
-                 aes(DA, RMSE, fill=as.factor(param))) +  ylab("RMSE") + xlab("")+
-  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="Params")) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.31),
-        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
+parameters <- ggplot(subset(params, depth %in% c(1,5,9)),
+                     aes(DA, RMSE, fill=as.factor(param))) +  ylab("RMSE") + xlab("")+
+  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="Parameters")) +
+  geom_hline(yintercept=2, linetype='dashed', col = 'black', linewidth=0.3)+ ylim(0,3.3) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
+        legend.background = element_blank(), panel.grid.minor = element_blank(), legend.box.margin=margin(-10,-1,-10,-10),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) 
 
-tag_facet2(params, fontface = 1, hjust=0, size=3,
+tag_facet2(parameters, fontface = 1, hjust=0, size=3,
            tag_pool = c("a","b","c","d","e","f"))
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_parameters.jpg"),width=3.5, height=4)
 
@@ -269,25 +271,24 @@ params$horizon <- params$horizon - 1
 #change DA factor order
 params$model_id <- factor(params$model_id, levels = c("Daily", "Weekly","Fortnightly","Monthly"))
 
-#rename parameter facets
 variable <- c("longwave","hypo_sed_temp","epi_sed_temp")
 names(variable) <- c("lw_factor","zone1temp","zone2temp")
 
-fig9 <- ggplot(subset(params,horizon==1), aes(as.Date(datetime), mean, color=model_id)) + theme_bw() +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.67,0.98),
-        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
+fig7 <- ggplot(subset(params,horizon==1), aes(as.Date(datetime), mean, color=model_id)) + theme_bw() +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position ="right",
+        legend.background = element_blank(), panel.grid.minor = element_blank(), legend.box.margin=margin(-10,-1,-10,-10),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   scale_color_manual(values=cb_friendly_2) +
   scale_fill_manual(values=cb_friendly_2) +
   facet_wrap(~variable, scales="free_y",ncol=1, labeller = labeller(variable = variable)) +
-  ylab("parameter")+ xlab("")+
+  ylab("Parameter value")+ xlab("")+
   scale_x_date(date_labels = "%b") + #ylab(expression("Temperature ("*~degree*C*")")) 
   geom_ribbon(aes(y = mean, ymin = mean-sd, ymax = mean+sd, color=model_id, fill=model_id), alpha=0.5) +
-  guides(fill = guide_legend(title="", override.aes = list(alpha=1)), color="none")
+  guides(fill = guide_legend(title="DA frequency", override.aes = list(alpha=1)), color="none")
 
-tag_facet2(fig9, fontface = 1, x=as.Date("2021-01-01"), hjust=0.7, size=3,
+tag_facet2(fig7, fontface = 1, x=as.Date("2021-01-01"), hjust=0.7, size=3,
            tag_pool = c("a","b","c"))
 ggsave(file.path(lake_directory,"analysis/figures/paramevolvstime_1day.jpg"),width=3.5, height=4)
 
@@ -404,8 +405,8 @@ params_startdate <- params_startdate %>% mutate(parameter = recode(parameter, "z
 
 #visualize how parameters change over time
 figs5 <- ggplot(subset(params_inflat, parameter=="Sediment Temperature"), aes(datetime, mean, color=DA)) + theme_bw() +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.59,0.03),
-        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
+        legend.background = element_blank(), panel.grid.minor = element_blank(), legend.box.margin=margin(-10,-1,-10,-10),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
@@ -420,8 +421,8 @@ tag_facet2(figs5, fontface = 1, hjust=2.5, size=3, tag_pool = c("a","b"),
 ggsave(file.path(lake_directory,"analysis/figures/paramRMSEvsHorizon_inflat.jpg"),width=3.5, height=4)
 
 figs6 <- ggplot(subset(params_startdate, parameter=="Sediment Temperature"), aes(datetime, mean, color=DA)) + theme_bw() +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.59,0.03),
-        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
+        legend.background = element_blank(), panel.grid.minor = element_blank(), legend.box.margin=margin(-10,-1,-10,-10),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +

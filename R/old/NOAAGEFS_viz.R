@@ -1,3 +1,5 @@
+pacman::p_load(tidyverse)
+
 noaa_date <- as.character(lubridate::as_date("2021-10-11"))
 s3 <- arrow::s3_bucket(bucket = "drivers/noaa/gefs-v12/stage2/parquet/0", endpoint_override = "s3.flare-forecast.org", anonymous = TRUE)
 noaa_df <- arrow::open_dataset(s3, partitioning = "reference_date") |> 
