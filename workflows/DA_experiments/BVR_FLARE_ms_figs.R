@@ -44,7 +44,7 @@ strat_date<- "2021-11-07"
 
 #add stratified vs mixed col
 all_DA_forecasts$phen <- ifelse(all_DA_forecasts$datetime <= as.POSIXct(strat_date) & 
-                                  all_DA_forecasts$datetime >="2021-03-13","Stratified", "Mixed")
+                                  all_DA_forecasts$datetime >="2021-03-12","Stratified", "Mixed")
 
 #remove n=6 days with ice-cover 
 all_DA_forecasts <- all_DA_forecasts[!(as.Date(all_DA_forecasts$datetime) %in% c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
@@ -58,6 +58,11 @@ all_DA_forecasts$model_id <- str_to_title(all_DA_forecasts$model_id)
 
 #only keep 2021 data
 all_DA_forecasts <- all_DA_forecasts[all_DA_forecasts$datetime<="2021-12-31",]
+
+#------------------------------------------------------------------------------#
+#quick look to see what water temp ranges during mixed and stratified periods are
+range(all_DA_forecasts$observation[all_DA_forecasts$phen=="Mixed"])
+range(all_DA_forecasts$observation[all_DA_forecasts$phen=="Stratified"])
 
 #------------------------------------------------------------------------------#
 #calculate forecast skill metrics
@@ -351,27 +356,23 @@ mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==7 & median_RMS
 mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Monthly"])
 
 
-#calcualte percent difference of 35 and 1 day RMSE for mixed vs. stratified
-(mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Mixed"]) -
-    mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Mixed"])) /
-  mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$TempDynamics=="Mixed" & median_RMSE_horizon$Horizon_days!=7]) *100
+#calculate 1 and 35 day RMSE for mixed vs. stratified
+    mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Mixed"]) 
+    mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Mixed"]) 
 
-(mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Stratified"]) -
-    mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Stratified"])) /
-  mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$Horizon_days!=7]) *100
+    mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Stratified"]) 
+    mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Stratified"])
+    
 
 #mixed vs stratified rmse across depths
-(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Stratified"]) - 
-    mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Mixed"])) /
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==1]) *100
-
-(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Stratified"]) - 
-    mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Mixed"])) /
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==5]) *100
-
-(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Stratified"]) -
-    mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Mixed"])) /
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==9]) *100
+    mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==1 & median_RMSE_depth$TempDynamics=="Mixed"])
+    mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==1 & median_RMSE_depth$TempDynamics=="Stratified"]) 
+    
+    mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==5 & median_RMSE_depth$TempDynamics=="Mixed"])
+    mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==5 & median_RMSE_depth$TempDynamics=="Stratified"]) 
+    
+    mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==9 & median_RMSE_depth$TempDynamics=="Mixed"])
+    mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==9 & median_RMSE_depth$TempDynamics=="Stratified"]) 
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #### FIGURE 5: 1,5,9m depth facets for each DA frequency for 1,7,and 35-day ahead forecasts  ####
@@ -575,9 +576,9 @@ target_file <- file.path(config$file_path$qaqc_data_directory,
 obs <- read.csv(target_file)
 wtemp <- obs[obs$variable == "temperature", ] # Subset to temperature
 
-sub <- wtemp[wtemp$date > "2021-01-01" & wtemp$date < "2022-01-02", ] # Subset to target dates - need to change for your experiment
+sub <- wtemp[wtemp$date > "2021-01-01" & wtemp$date < "2022-01-01", ] # Subset to target dates - need to change for your experiment
 sub$Date <- as.Date(sub$date) # Line
-#sub$dens <- rLakeAnalyzer::water.density(sub$value) # density for stratification
+sub$dens <- rLakeAnalyzer::water.density(sub$observation) # density for stratification
 
 # Classifies phenology
 phen <- plyr::ddply(sub, "Date", function(x) {
@@ -597,17 +598,19 @@ sub$depth[sub$depth==0] <- 0.1
 #-------------------------------------------------------------------------------#
 # Fig 3 - phenology plot w/ temp at different depths 
 ggplot(sub) +   theme_bw() +
-  geom_rect(data = phen, aes(fill = "Mixed"), xmin=-Inf ,xmax = as.Date("2021-03-12"), ymin = -Inf, ymax = Inf, inherit.aes = FALSE) + 
-  geom_rect(data = phen, aes(fill = "Stratified"), xmin=as.Date("2021-03-13") ,xmax = as.Date("2021-11-07"), ymin = -Inf, ymax = Inf, inherit.aes = FALSE)+
+  geom_rect(data = phen, aes(fill = "Mixed"), xmin=-Inf ,xmax = as.Date("2021-03-11"), ymin = -Inf, ymax = Inf, inherit.aes = FALSE) + 
+  geom_rect(data = phen, aes(fill = "Stratified"), xmin=as.Date("2021-03-12") ,xmax = as.Date("2021-11-07"), ymin = -Inf, ymax = Inf, inherit.aes = FALSE)+
   geom_rect(data = phen, aes(fill = "Mixed"), xmin=as.Date("2021-11-08") ,xmax = Inf, ymin = -Inf, ymax = Inf, inherit.aes = FALSE) +
-  geom_line(aes(Date, as.numeric(observation), color = factor(depth)), size=0.4) + ylab(expression("Temperature ("*~degree*C*")")) + xlab("") +
+  geom_line(aes(Date, as.numeric(observation), color = factor(depth)), linewidth=0.4) + ylab(expression("Temperature ("*~degree*C*")")) + xlab("") +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right", legend.background = element_blank(),
         legend.key = element_blank(), legend.key.height = unit(0.3,"cm"), legend.key.width = unit(0.4,"cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank())+
   scale_fill_manual('', values = c('gray','white')) +
   scale_color_viridis(option="B", discrete="TRUE", direction=-1) +
   guides(color=guide_legend("Depth (m)"),fill= guide_legend("Period",order = 1, override.aes= list(color="black")))
-ggsave(file.path(lake_directory,"analysis/figures/2021_watertemp_mixedVstratified.jpg"))
+ggsave(file.path(lake_directory,"analysis/figures/2021_watertemp_mixedVstratified.jpg"), width=4, height=3)
+
+range(sub$observation[sub$datetime>= "2021-03-12" & sub$datetime<= "2021-11-07"])
 
 #-------------------------------------------------------------------------------#
 # Figure 6 - fig to compare forecast skill across horizons and depths 

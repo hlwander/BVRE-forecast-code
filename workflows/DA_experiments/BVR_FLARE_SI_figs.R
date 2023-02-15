@@ -109,19 +109,19 @@ strat_date<- "2021-11-07"
 
 #add stratified vs mixed col
 all_27nov$phen <- ifelse(all_27nov$date <= as.Date(strat_date) & 
-                           all_27nov$date >="2021-03-13","Stratified", "Mixed")
+                           all_27nov$date >="2021-03-12","Stratified", "Mixed")
 
 all_24nov$phen <- ifelse(all_24nov$date <= as.Date(strat_date) & 
-                           all_24nov$date >="2021-03-13","Stratified", "Mixed")
+                           all_24nov$date >="2021-03-12","Stratified", "Mixed")
 
 all_22nov$phen <- ifelse(all_22nov$date <= as.Date(strat_date) & 
-                           all_22nov$date >="2021-03-13","Stratified", "Mixed")
+                           all_22nov$date >="2021-03-12","Stratified", "Mixed")
 
 all_fixed$phen <- ifelse(all_fixed$date <= as.Date(strat_date) & 
-                           all_fixed$date >="2021-03-13","Stratified", "Mixed")
+                           all_fixed$date >="2021-03-12","Stratified", "Mixed")
 
 all_1.04$phen <- ifelse(all_1.04$date <= as.Date(strat_date) & 
-                          all_1.04$date >="2021-03-13","Stratified", "Mixed")
+                          all_1.04$date >="2021-03-12","Stratified", "Mixed")
 
 #only keep 2021 data
 all_27nov <- all_27nov[all_27nov$date<="2021-12-31",]

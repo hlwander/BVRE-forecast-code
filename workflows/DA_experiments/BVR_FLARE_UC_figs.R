@@ -37,7 +37,7 @@ strat_date<- "2021-11-07"
 
 #add stratified vs mixed col
 all_DA_forecasts$phen <- ifelse(all_DA_forecasts$datetime <= as.POSIXct(strat_date) & 
-                                  all_DA_forecasts$datetime >="2021-03-13","Stratified", "Mixed")
+                                  all_DA_forecasts$datetime >="2021-03-12","Stratified", "Mixed")
 
 #remove n=6 days with ice-cover 
 all_DA_forecasts <- all_DA_forecasts[!(as.Date(all_DA_forecasts$datetime) %in% c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
@@ -62,7 +62,8 @@ forecast_skill_depth_horizon <-  plyr::ddply(all_DA_forecasts, c("depth","horizo
     MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
     pbias = 100 * (sum(x$mean - x$observation, na.rm = TRUE) / sum(x$observation, na.rm = TRUE)),
     CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS,
-    variance = (mean(x$sd))^2
+    variance = (mean(x$sd))^2,
+    sd = mean(x$sd)
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
@@ -124,7 +125,8 @@ forecast_horizon_avg <- plyr::ddply(all_DA_forecasts, c("horizon", "model_id", "
     MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
     pbias = 100 * (sum(x$mean - x$observation, na.rm = TRUE) / sum(x$observation, na.rm = TRUE)),
     CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS,
-    variance = (mean(x$sd))^2
+    variance = (mean(x$sd))^2,
+    sd = mean(x$sd)
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
@@ -138,7 +140,8 @@ forecast_depth_avg <- plyr::ddply(all_DA_forecasts, c("depth", "model_id", "phen
     MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
     pbias = 100 * (sum(x$mean - x$observation, na.rm = TRUE) / sum(x$observation, na.rm = TRUE)),
     CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS,
-    variance = (mean(x$sd))^2
+    variance = (mean(x$sd))^2,
+    sd = mean(x$sd)
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
@@ -731,7 +734,7 @@ strat_date<- "2021-11-07"
 
 #add stratified vs mixed col
 all_DA_forecasts_yesIC$phen <- ifelse(all_DA_forecasts_yesIC$datetime <= as.POSIXct(strat_date) & 
-                                        all_DA_forecasts_yesIC$datetime >="2021-03-13","Stratified", "Mixed")
+                                        all_DA_forecasts_yesIC$datetime >="2021-03-12","Stratified", "Mixed")
 
 #remove n=6 days with ice-cover 
 all_DA_forecasts_yesIC <- all_DA_forecasts_yesIC[!(as.Date(all_DA_forecasts_yesIC$datetime) %in% c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
@@ -755,7 +758,8 @@ forecast_skill_depth_horizon_yesIC <-  plyr::ddply(all_DA_forecasts_yesIC, c("de
     MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
     pbias = 100 * (sum(x$mean - x$observation, na.rm = TRUE) / sum(x$observation, na.rm = TRUE)),
     CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS,
-    variance = (mean(x$sd))^2
+    variance = (mean(x$sd))^2,
+    sd = mean(x$sd)
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
@@ -770,7 +774,8 @@ forecast_horizon_avg_yesIC <- plyr::ddply(all_DA_forecasts_yesIC, c("horizon", "
     MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
     pbias = 100 * (sum(x$mean - x$observation, na.rm = TRUE) / sum(x$observation, na.rm = TRUE)),
     CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS,
-    variance = (mean(x$sd))^2
+    variance = (mean(x$sd))^2,
+    sd = mean(x$sd)
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
@@ -784,7 +789,8 @@ forecast_depth_avg_yesIC <- plyr::ddply(all_DA_forecasts_yesIC, c("depth", "mode
     MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
     pbias = 100 * (sum(x$mean - x$observation, na.rm = TRUE) / sum(x$observation, na.rm = TRUE)),
     CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS,
-    variance = (mean(x$sd))^2
+    variance = (mean(x$sd))^2,
+    sd = mean(x$sd)
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
@@ -821,15 +827,17 @@ IC <- ggplot(subset(UC_depth, depth %in% c(1,5,9)), aes(model_id, RMSE, fill=as.
 tag_facet2(IC, fontface = 1, hjust=0, size=3, tag_pool = c("a","b","c","d","e","f"))
 ggsave(file.path(lake_directory,"analysis/figures/UC_RMSEvsDAfreq_depth_facets_IC_allhorizons.jpg"),width=3.5, height=4)
 
-#ggplot(subset(UC, depth %in% c(1,5,9) & horizon==1), aes(model_id, RMSE, fill=as.factor(IC))) +  ylab("RMSE") + xlab("")+
-#  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="")) + geom_hline(yintercept=2,linetype="dashed") +
-#  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.31),
-#        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
-#        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-#        legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
-#        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
-#  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
-#ggsave(file.path(lake_directory,"analysis/figures/UC_RMSEvsDAfreq_depth_facets_IC_1day.jpg"),width=3.5, height=4)
+IC_var <- ggplot(subset(UC, depth %in% c(1,5,9) & horizon==1), aes(model_id, sd, fill=as.factor(IC))) +  ylab("sd") + xlab("")+
+  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="")) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
+        legend.background = element_blank(), panel.grid.minor = element_blank(), legend.box.margin=margin(-10,-1,-10,-10),
+        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
+        legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
+  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
+
+tag_facet2(IC_var, fontface = 1, hjust=0, size=3, tag_pool = c("a","b","c","d","e","f"))
+ggsave(file.path(lake_directory,"analysis/figures/UC_SDevvsDAfreq_depth_facets_IC_1day.jpg"),width=3.5, height=4)
 
 
 fig8 <- ggplot(subset(UC_depth, depth %in% c(1,5,9)) ,aes(model_id, variance, fill=as.factor(IC))) +  ylab("variance") + xlab("")+
