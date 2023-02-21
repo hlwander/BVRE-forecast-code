@@ -890,26 +890,33 @@ UC_prop$prop_var <- ((forecast_skill_depth_horizon_yesIC$variance -
                         forecast_skill_depth_horizon$variance) / 
                        forecast_skill_depth_horizon_yesIC$variance)
 
-UC_prop$prop_sd <- ((forecast_skill_depth_horizon_yesIC$sd - 
-                       forecast_skill_depth_horizon$sd) / 
-                      forecast_skill_depth_horizon_yesIC$sd)
-
 
 fig9 <- ggplot(subset(UC_prop, depth %in% c(1,5,9)) ,
-               aes(horizon, prop_sd, color=as.factor(model_id))) +  ylab("Proportion of IC uncertainty") + 
-  geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + xlab("Horizon (Days)")+
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
-        legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
-        legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
-        legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), legend.title = element_text(size=6),
-        axis.text.x = element_text(vjust = 0.5,size=6), axis.text.y = element_text(size=6)) + ylim(-0.06, 0.75) +
-  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_color_manual(values=cb_friendly_2) 
+               aes(horizon, prop_var, color=as.factor(model_id))) +  
+  ylab("Proportion of IC uncertainty") + 
+  geom_line() + theme_bw() #+ geom_point() +
+  guides(color=guide_legend(title="DA frequency")) + 
+  xlab("Horizon (Days)")+ ylim(-0.06, 0.75) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"),
+        legend.position = "right",
+        legend.background = element_blank(), 
+        panel.grid.minor = element_blank(),
+        legend.key.size = unit(0.5, "lines"), 
+        panel.grid.major = element_blank(),
+        legend.box.margin=margin(-10,-1,-10,-10),
+        legend.text  = element_text(size = 6), 
+        panel.spacing=unit(0, "cm"), 
+        legend.title = element_text(size=6),
+        axis.text.x = element_text(vjust = 0.5,size=6), 
+        axis.text.y = element_text(size=6)) + 
+  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + 
+  scale_color_manual(values=cb_friendly_2) 
 
 tag_facet2(fig9, fontface = 1, size=3, tag_pool = c("a","b","c","d","e","f"))  
-ggsave(file.path(lake_directory,"analysis/figures/UC_prop_ICdvshorizon_depth_facets_sd.jpg"),width=3.5, height=4)
+ggsave(file.path(lake_directory,"analysis/figures/UC_prop_ICdvshorizon_depth_facets_var.jpg"),width=3.5, height=4)
 
-mean(UC_prop$prop_sd[UC_prop$horizon==1 & UC_prop$model_id=="Fortnightly"])
+mean(UC_prop$prop_var[UC_prop$horizon==1 & UC_prop$model_id=="Monthly"])
 
-mean(UC_prop$prop_sd[UC_prop$phen=="Mixed"])
-mean(UC_prop$prop_sd[UC_prop$phen=="Stratified" & UC_prop$depth==9])
+mean(UC_prop$prop_var[UC_prop$phen=="Mixed"])
+mean(UC_prop$prop_var[UC_prop$phen=="Stratified" & UC_prop$depth==9])
 

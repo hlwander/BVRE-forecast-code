@@ -113,8 +113,8 @@ forecast_avg$model_id <- factor(forecast_avg$model_id, levels=c("Daily", "Weekly
 
 #------------------------------------------------------------------------------#
 #FIGURES
-cb_friendly <- c("#117733", "#332288","#AA4499", "#44AA99", "#999933", "#661100")
-cb_friendly_2 <- c("#8C510A", "#BF812D", "#C7EAE5", "#35978F") #"#DFC27D", "#DEDEDE",
+cb_friendly_2 <- c("#8C510A", "#BF812D", "#C7EAE5", "#35978F") #"#DFC27D", "#DEDEDE", "#8fd5cb"
+
 
 #FIGURE 5: DA frequency boxplots for 1, 5, and 9m and 1, 7, and 35-day horizons
 
@@ -425,30 +425,38 @@ kw_horizons$model_id <- factor(kw_horizons$model_id, levels = c("Daily", "Weekly
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_fig5.jpg"),width=3.5, height=4)
 
 #Figure to answer Q1 - aggregated RMSE across depths and seasons
-ggplot(forecast_avg ,aes(horizon, RMSE, color=as.factor(model_id))) +  ylab("RMSE") + xlab("Horizon (days)")+
-  geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + geom_hline(yintercept = 2, linetype="dotted") + ylim(0,3.2) +
+ggplot(forecast_avg ,aes(horizon, RMSE, color=as.factor(model_id))) +  
+  ylab(expression("RMSE ("*~degree*C*")")) + xlab("Horizon (days)")+
+  geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + 
+  geom_hline(yintercept = 2, linetype="dotted") + ylim(0,3.2) +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
         legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
         legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
         legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), legend.title = element_text(size=6),
         axis.text.x = element_text(vjust = 0.5,size=6), axis.text.y = element_text(size=6)) +
-  scale_color_manual(values=cb_friendly_2) 
+  scale_color_manual(values=cb_friendly_2)# +geom_point()
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvshorizon_fig4_Q1.jpg"),width=4, height=3)
 
 #NEW FIGURE 7!!
 #now make a plot for RMSE vs all horizons
-fig7 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, RMSE, color=as.factor(model_id))) +  ylab("RMSE") + xlab("Horizon (days)")+
-   geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + geom_hline(yintercept = 2, linetype="dotted") + ylim(0,3.2) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
-        legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
-        legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
-        legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), legend.title = element_text(size=6),
-        axis.text.x = element_text(vjust = 0.5,size=6), axis.text.y = element_text(size=6)) +
-  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_color_manual(values=cb_friendly_2) 
+fig7 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,
+               aes(horizon, RMSE, color=as.factor(model_id))) +  
+  ylab(expression("RMSE ("*~degree*C*")")) + xlab("Horizon (days)")+
+   geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + 
+  geom_hline(yintercept = 2, linetype="dotted") + ylim(0,3.2) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), 
+        legend.position = "right", legend.background = element_blank(),
+        panel.grid.minor = element_blank(), legend.key.size = unit(0.5, "lines"), 
+        panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
+        legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), 
+        legend.title = element_text(size=6), axis.text.x = element_text(vjust = 0.5,size=6), 
+        axis.text.y = element_text(size=6)) + #geom_point() +
+  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + 
+  scale_color_manual(values=cb_friendly_2) 
 
 tag_facet2(fig7, fontface = 1, size=3,
            tag_pool = c("a","b","c","d","e","f"))
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvshorizon_depth_facets_fig4.jpg"),width=3.5, height=4)
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvshorizon_depth_facets_fig7.jpg"),width=3.5, height=4)
 
 
 fig8 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, variance, color=as.factor(model_id))) +  
@@ -463,16 +471,6 @@ fig8 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(ho
 tag_facet2(fig8, fontface = 1, size=3,
            tag_pool = c("a","b","c","d","e","f"))
 ggsave(file.path(lake_directory,"analysis/figures/Varvshorizon_depth_facets_fig8.jpg"),width=3.5, height=4)
-
-#trying to figure out the variance dip
-ggplot(subset(forecast_skill_depth_horizon, model_id =="Daily" & depth==9) ,aes(horizon, variance)) +  ylab("Variance") + xlab("Horizon (days)")+
-  geom_line() + theme_bw() + guides(fill=guide_legend(title="")) + ylim(0,8.8) + geom_point() +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.89,0.75),
-        legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
-        legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-        legend.title = element_blank(),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
-        axis.text.x = element_text(vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
-  facet_grid(~phen)
 
 
 mean(forecast_skill_depth_horizon$sd[forecast_skill_depth_horizon$horizon ==25 &
@@ -519,11 +517,20 @@ median(forecast_horizon_avg$RMSE_bins[forecast_horizon_avg$phen=="Mixed" & forec
 median(forecast_horizon_avg$RMSE_bins[forecast_horizon_avg$phen=="Stratified" & forecast_horizon_avg$horizon==2 & forecast_horizon_avg$model_id=="Weekly"])
 
 #------------------------------------------------------------------------------------------------#
-# Data assimilation figure 8
+# Data assimilation figure 4
 DA <- all_DA_forecasts
 
-#pull out 2 horizons for fig 4 (mixed vs stratified)
-DA_sub <- DA[(DA$datetime >="2021-01-01" & DA$datetime <="2021-01-31") | (DA$datetime >="2021-06-24" & DA$datetime <="2021-07-25"),]
+#change reference datetime format
+DA$reference_datetime <- as.POSIXct(DA$reference_datetime)
+
+#pull out 1 horizon for fig 4 (stratified so that all DA freqs assimilate data on same day)
+DA_sub <- DA[DA$reference_datetime=="2021-06-22",] #for forecasts starting on 24 Jun (1 day before DA)
+obs <- DA[DA$datetime>="2021-06-19" & DA$datetime <= "2021-07-28",]
+
+#change date format
+obs$datetime <- as.Date(obs$datetime)
+
+#DA_sub <- DA[DA$datetime >="2021-06-24" & DA$datetime <="2021-07-25",] #(DA$datetime >="2021-01-01" & DA$datetime <="2021-01-31") 
 
 #summary df to average the forecasts for each DA freq, horizon, depth, and date
 DA_sub_final <- plyr::ddply(DA_sub, c("depth","horizon","datetime", "model_id"), function(x) {
@@ -539,35 +546,31 @@ DA_sub_final <- plyr::ddply(DA_sub, c("depth","horizon","datetime", "model_id"),
 #change datetime format
 DA_sub_final$datetime <- as.Date(DA_sub_final$datetime)
 
-#add in phen column
-DA_sub_final$phen <- "Stratified" 
-DA_sub_final$phen[DA_sub_final$datetime >="2021-01-01" & DA_sub_final$date <="2021-01-31"] <- "Mixed"
-
 #change DA factor order
 DA_sub_final$model_id <- factor(DA_sub_final$model_id, levels = c("Daily", "Weekly","Fortnightly","Monthly"))
 
 #change order of DA frequencies so daily is plotted on top
 DA_sub_final$model_id <- factor(DA_sub_final$model_id, levels=rev(levels(DA_sub_final$model_id)))
 
-fig8 <- ggplot(subset(DA_sub_final, horizon==1 & depth %in% c(1,5,9)), aes(datetime, forecast_mean, color=model_id)) + 
-  geom_ribbon(aes(x=datetime, y = forecast_mean, ymin = forecast_mean-forecast_sd, ymax = forecast_mean+forecast_sd, 
-                  color=model_id, fill=model_id),alpha=0.4)  + theme_bw() + 
-  #geom_line(aes(datetime, forecast_mean), size=0.2, data = . %>% filter(model_id %in% c("Daily"))) +
-  geom_point(aes(x=datetime, y=observed), col="black", size=0.3) +  
-  facet_wrap(depth~phen, scales = "free", labeller = labeller(depth=depths,.multi_line = FALSE),ncol=2) + scale_x_date() +
+ggplot(subset(DA_sub_final, depth %in% c(1,5,9)), aes(horizon, forecast_mean, color=model_id)) + 
+  geom_ribbon(data=subset(DA_sub_final, depth %in% c(1)),aes(x=datetime, y = forecast_mean, ymin = forecast_mean-forecast_sd, ymax = forecast_mean+forecast_sd, 
+                  color=model_id, fill=model_id),alpha=0.4) + theme_bw() + 
+  geom_ribbon(data=subset(DA_sub_final, depth %in% c(5)),aes(x=datetime, y = forecast_mean, ymin = forecast_mean-forecast_sd, ymax = forecast_mean+forecast_sd, 
+                                                           color=model_id, fill=model_id),alpha=0.4) +
+  geom_ribbon(data=subset(DA_sub_final, depth %in% c(9)),aes(x=datetime, y = forecast_mean, ymin = forecast_mean-forecast_sd, ymax = forecast_mean+forecast_sd, 
+                                                           color=model_id, fill=model_id),alpha=0.4) +
+  geom_point(data=subset(obs, depth %in% c(1,5,9)), aes(x=datetime, y=observation, shape=as.factor(depth)), col="black", size=0.3) +  
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right", legend.box.margin=margin(-10,-1,-10,-10),
         legend.background = element_blank(), panel.grid.minor = element_blank(), legend.key=element_rect(fill=NA),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 4.5),legend.text  = element_text(size = 4.5), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   ylab(expression("Temperature ("*~degree*C*")")) + xlab("")  + scale_color_manual(values=rev(cb_friendly_2)) + 
-  scale_fill_manual(values=rev(cb_friendly_2)) +
-  guides(fill = guide_legend(title="DA frequency", override.aes = list(alpha=1),reverse = TRUE), color="none")
-
-tag_facet2(fig8, fontface = 1, hjust=0.3, size=3,
-           tag_pool = c("a","b","c","d","e","f"), 
-           x=c(as.Date("2021-01-01"),as.Date("2021-06-24")))
-ggsave(file.path(lake_directory,"analysis/figures/AssimilationVSdatafreq_fig8.jpg"), width=3.5, height=4) 
+  scale_fill_manual(values=rev(cb_friendly_2)) + geom_vline(xintercept=as.Date("2021-06-24"), linetype="dashed") +
+  annotate(geom = "text", x = c(as.Date("2021-06-21"),as.Date("2021-06-27")), y = 34, label = c("past","future"), size = 3) +
+  guides(fill = guide_legend(title="DA frequency", override.aes = list(alpha=1),reverse = TRUE), color="none",
+         shape = guide_legend(title = "Depth (m)"))
+ggsave(file.path(lake_directory,"analysis/figures/forecast_ProofOfConcept_fig4.jpg"), width=3.5, height=4) 
 
 #uncertainty range across depths and mixed vs stratified periods
 ((mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Monthly"]) -
