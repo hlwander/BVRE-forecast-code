@@ -252,6 +252,20 @@ tag_facet2(parameters, fontface = 1, hjust=0, size=3,
            tag_pool = c("a","b","c","d","e","f"))
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_parameters.jpg"),width=3.5, height=4)
 
+#now make a plot for RMSE vs all horizons
+horizon_params <- ggplot(subset(params, depth %in% c(1,5,9) & param=="1.04") ,aes(horizon, RMSE, color=as.factor(DA))) +  ylab("RMSE - 1.04") + xlab("Horizon (days)")+
+  geom_line()  + theme_bw() + guides(color=guide_legend(title="DA frequency")) + geom_hline(yintercept = 2, linetype="dotted") + ylim(0,3.5) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
+        legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
+        legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
+        legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), legend.title = element_text(size=6),
+        axis.text.x = element_text(vjust = 0.5,size=6), axis.text.y = element_text(size=6)) +
+  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_color_manual(values=cb_friendly_2) 
+
+tag_facet2(horizon_params, fontface = 1, size=3,
+           tag_pool = c("a","b","c","d","e","f"))
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvshoriz_depth_facets_parameter_1.04.jpg"),width=3.5, height=4)
+
 #------------------------------------------------------------------------------------------------#
 #parameter evolution figs 
 #read in all forecasts 

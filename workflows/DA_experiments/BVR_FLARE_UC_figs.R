@@ -4,6 +4,18 @@
 #load libraries
 pacman::p_load(ggplot2,tidyverse,FSA,rcompanion,ggpubr, egg)
 
+#change tag_facet code
+tag_facet2 <- function(p, open = "(", close = ")", tag_pool = letters, x = -Inf, y = Inf, 
+                       hjust = -0.5, vjust = 1.5, fontface = 2, family = "", ...) {
+  
+  gb <- ggplot_build(p)
+  lay <- gb$layout$layout
+  tags <- cbind(lay, label = paste0(open, tag_pool[lay$PANEL], close), x = x, y = y)
+  p + geom_text(data = tags, aes_string(x = "x", y = "y", label = "label"), ..., hjust = hjust, 
+                vjust = vjust, fontface = fontface, family = family, inherit.aes = FALSE)
+}
+
+
 #set wd
 lake_directory <- here::here()
 setwd(lake_directory)
@@ -414,27 +426,23 @@ mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==9 & median_RMSE_hor
 mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Monthly"])
 
 
-#calcualte percent difference of 35 and 1 day RMSE for mixed vs. stratified
-(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Mixed"]) -
-    mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Mixed"])) /
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$TempDynamics=="Mixed"]) *100
+#calculate 1 and 35 day RMSE for mixed vs. stratified
+mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Mixed"]) 
+mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Mixed"]) 
 
-(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Stratified"]) -
-    mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Stratified"])) /
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$TempDynamics=="Stratified"]) *100
+mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Stratified"]) 
+mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Stratified"])
+
 
 #mixed vs stratified rmse across depths
-(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Stratified"]) - 
-    mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Mixed"])) /
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==1]) *100
+mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==1 & median_RMSE_depth$TempDynamics=="Mixed"])
+mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==1 & median_RMSE_depth$TempDynamics=="Stratified"]) 
 
-(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Stratified"]) - 
-    mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Mixed"])) /
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==5]) *100
+mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==5 & median_RMSE_depth$TempDynamics=="Mixed"])
+mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==5 & median_RMSE_depth$TempDynamics=="Stratified"]) 
 
-(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Stratified"]) -
-    mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Mixed"])) /
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==9]) *100
+mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==9 & median_RMSE_depth$TempDynamics=="Mixed"])
+mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==9 & median_RMSE_depth$TempDynamics=="Stratified"]) 
 
 
 #create table to export mixed and stratified p-vals comparing horizons for each depth and DA freq
@@ -866,3 +874,42 @@ UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="no IC"& UC_depth$d
 
 UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="yes IC" & UC_depth$depth==9 & UC_depth$model_id=="Monthly"]
 UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="no IC"& UC_depth$depth==9 & UC_depth$model_id=="Monthly"]
+
+#-------------------------------------------------------------------------------#
+#NEW FIGURE - proportion of IC uncertainty vs horizon
+
+#new dataframe to calculate the proportion of IC uncertainty across depths, horizons, model_id, and phen
+UC_prop <- data.frame("depth" = forecast_skill_depth_horizon_yesIC$depth, 
+                      "horizon" = forecast_skill_depth_horizon_yesIC$horizon, 
+                      "phen" = forecast_skill_depth_horizon_yesIC$phen, 
+                      "model_id" = forecast_skill_depth_horizon_yesIC$model_id,
+                      "var" = forecast_skill_depth_horizon_yesIC$variance, 
+                      "sd" = forecast_skill_depth_horizon_yesIC$sd)
+
+UC_prop$prop_var <- ((forecast_skill_depth_horizon_yesIC$variance - 
+                        forecast_skill_depth_horizon$variance) / 
+                       forecast_skill_depth_horizon_yesIC$variance)
+
+UC_prop$prop_sd <- ((forecast_skill_depth_horizon_yesIC$sd - 
+                       forecast_skill_depth_horizon$sd) / 
+                      forecast_skill_depth_horizon_yesIC$sd)
+
+
+fig9 <- ggplot(subset(UC_prop, depth %in% c(1,5,9)) ,
+               aes(horizon, prop_sd, color=as.factor(model_id))) +  ylab("Proportion of IC uncertainty") + 
+  geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + xlab("Horizon (Days)")+
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
+        legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
+        legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
+        legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), legend.title = element_text(size=6),
+        axis.text.x = element_text(vjust = 0.5,size=6), axis.text.y = element_text(size=6)) + ylim(-0.06, 0.75) +
+  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_color_manual(values=cb_friendly_2) 
+
+tag_facet2(fig9, fontface = 1, size=3, tag_pool = c("a","b","c","d","e","f"))  
+ggsave(file.path(lake_directory,"analysis/figures/UC_prop_ICdvshorizon_depth_facets_sd.jpg"),width=3.5, height=4)
+
+mean(UC_prop$prop_sd[UC_prop$horizon==1 & UC_prop$model_id=="Fortnightly"])
+
+mean(UC_prop$prop_sd[UC_prop$phen=="Mixed"])
+mean(UC_prop$prop_sd[UC_prop$phen=="Stratified" & UC_prop$depth==9])
+

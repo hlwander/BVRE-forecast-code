@@ -96,6 +96,21 @@ forecast_horizon_avg <- plyr::ddply(all_DA_forecasts, c("horizon", "model_id", "
 #order DA frequencies
 forecast_horizon_avg$model_id <- factor(forecast_horizon_avg$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
+#and last df for forecast skill aggregated across depths and horizons
+forecast_avg <- plyr::ddply(all_DA_forecasts, c("model_id", "horizon"), function(x) {
+  data.frame(
+    RMSE = sqrt(mean((x$mean - x$observation)^2, na.rm = TRUE)),
+    MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
+    pbias = 100 * (sum(x$mean - x$observation, na.rm = TRUE) / sum(x$observation, na.rm = TRUE)),
+    CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS,
+    variance = (mean(x$sd))^2
+  )
+}, .progress = plyr::progress_text(), .parallel = FALSE) 
+
+#order DA frequencies
+forecast_avg$model_id <- factor(forecast_avg$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
+
+
 #------------------------------------------------------------------------------#
 #FIGURES
 cb_friendly <- c("#117733", "#332288","#AA4499", "#44AA99", "#999933", "#661100")
@@ -409,34 +424,45 @@ kw_horizons$model_id <- factor(kw_horizons$model_id, levels = c("Daily", "Weekly
              tag_pool = c("a","b","c","d","e","f"))  
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_fig5.jpg"),width=3.5, height=4)
 
+#Figure to answer Q1 - aggregated RMSE across depths and seasons
+ggplot(forecast_avg ,aes(horizon, RMSE, color=as.factor(model_id))) +  ylab("RMSE") + xlab("Horizon (days)")+
+  geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + geom_hline(yintercept = 2, linetype="dotted") + ylim(0,3.2) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
+        legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
+        legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
+        legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), legend.title = element_text(size=6),
+        axis.text.x = element_text(vjust = 0.5,size=6), axis.text.y = element_text(size=6)) +
+  scale_color_manual(values=cb_friendly_2) 
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvshorizon_fig4_Q1.jpg"),width=4, height=3)
 
-#NEW FIGURE 4!!
-forecast_skill_depth_horizon$model_id <- factor(forecast_skill_depth_horizon$model_id, 
-                                                levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
-
+#NEW FIGURE 7!!
 #now make a plot for RMSE vs all horizons
-fig4 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, RMSE, color=as.factor(model_id))) +  ylab("RMSE") + xlab("Horizon (days)")+
+fig7 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, RMSE, color=as.factor(model_id))) +  ylab("RMSE") + xlab("Horizon (days)")+
    geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + geom_hline(yintercept = 2, linetype="dotted") + ylim(0,3.2) +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
         legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
         legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
         legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), legend.title = element_text(size=6),
-        axis.text.x = element_text(vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
+        axis.text.x = element_text(vjust = 0.5,size=6), axis.text.y = element_text(size=6)) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_color_manual(values=cb_friendly_2) 
 
-tag_facet2(fig4, fontface = 1, size=3,
+tag_facet2(fig7, fontface = 1, size=3,
            tag_pool = c("a","b","c","d","e","f"))
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvshorizon_depth_facets_fig4.jpg"),width=3.5, height=4)
 
-ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, variance, color=as.factor(model_id))) +  ylab("Variance") + xlab("Horizon (days)")+
-  geom_line() + theme_bw() + guides(fill=guide_legend(title="")) + ylim(0,8.8) + geom_point() +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.89,0.75),
+
+fig8 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, variance, color=as.factor(model_id))) +  
+  ylab("Variance") + xlab("Horizon (days)")+
+  geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + ylim(0,8.3) + 
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
         legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
-        legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-        legend.title = element_blank(),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
-        axis.text.x = element_text(vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
+        legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
+        legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), legend.title = element_text(size=6),
+        axis.text.x = element_text(vjust = 0.5,size=6), axis.text.y = element_text(size=6)) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_color_manual(values=cb_friendly_2) 
-ggsave(file.path(lake_directory,"analysis/figures/Varvshorizon_depth_facets_fig5.jpg"),width=3.5, height=4)
+tag_facet2(fig8, fontface = 1, size=3,
+           tag_pool = c("a","b","c","d","e","f"))
+ggsave(file.path(lake_directory,"analysis/figures/Varvshorizon_depth_facets_fig8.jpg"),width=3.5, height=4)
 
 #trying to figure out the variance dip
 ggplot(subset(forecast_skill_depth_horizon, model_id =="Daily" & depth==9) ,aes(horizon, variance)) +  ylab("Variance") + xlab("Horizon (days)")+
@@ -449,8 +475,7 @@ ggplot(subset(forecast_skill_depth_horizon, model_id =="Daily" & depth==9) ,aes(
   facet_grid(~phen)
 
 
-
-mean(forecast_skill_depth_horizon$variance[forecast_skill_depth_horizon$horizon ==35 &
+mean(forecast_skill_depth_horizon$sd[forecast_skill_depth_horizon$horizon ==25 &
                                forecast_skill_depth_horizon$model_id=="Monthly"])
 
 forecast_skill_depth_horizon[forecast_skill_depth_horizon$phen=="Mixed" #& forecast_skill_depth_horizon$horizon ==5
