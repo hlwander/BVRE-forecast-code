@@ -7,6 +7,8 @@ configure_run_file <<- "configure_run.yml"
 update_run_config <<- TRUE
 config_set_name <<- "default"
 
+ignore_sigpipe()
+
 message("Checking for NOAA forecasts")
 noaa_ready <- FLAREr::check_noaa_present_arrow(lake_directory,
                                                configure_run_file,
