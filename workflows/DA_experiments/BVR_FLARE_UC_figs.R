@@ -894,7 +894,7 @@ UC_prop$prop_var <- ((forecast_skill_depth_horizon_yesIC$variance -
 fig9 <- ggplot(subset(UC_prop, depth %in% c(1,5,9)) ,
                aes(horizon, prop_var, color=as.factor(model_id))) +  
   ylab("Proportion of IC uncertainty") + 
-  geom_line() + theme_bw() #+ geom_point() +
+  geom_line() + theme_bw() +# geom_point() +
   guides(color=guide_legend(title="DA frequency")) + 
   xlab("Horizon (Days)")+ ylim(-0.06, 0.75) +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"),
@@ -918,5 +918,6 @@ ggsave(file.path(lake_directory,"analysis/figures/UC_prop_ICdvshorizon_depth_fac
 mean(UC_prop$prop_var[UC_prop$horizon==1 & UC_prop$model_id=="Monthly"])
 
 mean(UC_prop$prop_var[UC_prop$phen=="Mixed"])
-mean(UC_prop$prop_var[UC_prop$phen=="Stratified" & UC_prop$depth==9])
+mean(UC_prop$prop_var[UC_prop$phen=="Stratified" & UC_prop$depth==9 &
+                        UC_prop$horizon>=10 & UC_prop$horizon<=20])
 

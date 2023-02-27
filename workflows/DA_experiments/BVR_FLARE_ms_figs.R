@@ -96,7 +96,7 @@ forecast_horizon_avg <- plyr::ddply(all_DA_forecasts, c("horizon", "model_id", "
 #order DA frequencies
 forecast_horizon_avg$model_id <- factor(forecast_horizon_avg$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
-#and last df for forecast skill aggregated across depths and horizons
+#and last df for forecast skill aggregated across depths
 forecast_avg <- plyr::ddply(all_DA_forecasts, c("model_id", "horizon"), function(x) {
   data.frame(
     RMSE = sqrt(mean((x$mean - x$observation)^2, na.rm = TRUE)),
@@ -529,8 +529,6 @@ obs <- DA[DA$datetime>="2021-06-19" & DA$datetime <= "2021-07-28",]
 
 #change date format
 obs$datetime <- as.Date(obs$datetime)
-
-#DA_sub <- DA[DA$datetime >="2021-06-24" & DA$datetime <="2021-07-25",] #(DA$datetime >="2021-01-01" & DA$datetime <="2021-01-31") 
 
 #summary df to average the forecasts for each DA freq, horizon, depth, and date
 DA_sub_final <- plyr::ddply(DA_sub, c("depth","horizon","datetime", "model_id"), function(x) {
