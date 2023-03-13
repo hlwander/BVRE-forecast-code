@@ -186,7 +186,8 @@ for(i in starting_index:nrow(sims)){
                                               endpoint = config$s3$drivers$endpoint,
                                               local_directory = NULL,
                                               use_forecast = TRUE,
-                                              use_ler_vars = FALSE)
+                                              use_ler_vars = FALSE,
+                                              use_siteid_s3 = TRUE)
   
   met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "31")]
   
