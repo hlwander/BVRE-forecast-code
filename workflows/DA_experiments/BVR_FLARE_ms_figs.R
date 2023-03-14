@@ -633,7 +633,7 @@ ggplot(sub) +   theme_bw() +
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank())+
   scale_fill_manual('', values = c('gray','white')) +
   scale_color_viridis(option="B", discrete="TRUE", direction=-1) +
-  guides(color=guide_legend("Depth (m)"),fill= guide_legend("Period",order = 1, override.aes= list(color="black")))
+  guides(color=guide_legend("Depth (m)"),fill= guide_legend("Period",order = 1, override.aes= list(color="black", lwd=0.1)))
 ggsave(file.path(lake_directory,"analysis/figures/2021_watertemp_mixedVstratified.jpg"), width=4, height=3)
 
 range(sub$observation[sub$datetime>= "2021-03-12" & sub$datetime<= "2021-11-07"])
