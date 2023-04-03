@@ -2,7 +2,7 @@
 #09 Sep 2022 HLW
 
 #load libraries
-pacman::p_load(dplyr,readr,ggplot2, FSA, AnalystHelper, rcompanion, rstatix, ggpubr, stringr, egg, viridis, padr)
+pacman::p_load(dplyr,readr,ggplot2, FSA, AnalystHelper, rcompanion, rstatix, ggpubr, stringr, egg, viridis, padr, ggnewscale)
 
 #change tag_facet code
 tag_facet2 <- function(p, open = "(", close = ")", tag_pool = letters, x = -Inf, y = Inf, 
@@ -22,7 +22,7 @@ setwd(lake_directory)
 #read in all forecasts 
 score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/da_study"))
 all_DA_forecasts <- arrow::open_dataset(score_dir) |> collect() |>   
-  filter(!is.na(observation), variable == "temperature",horizon > 0.3, 
+  filter(!is.na(observation), variable == "temperature",horizon >= 0, 
          as.Date(reference_datetime) > "2020-12-31") 
 
 #round horizon because Jan 01 2021 has weird decimals
@@ -539,8 +539,8 @@ DA <- all_DA_forecasts
 DA$reference_datetime <- as.POSIXct(DA$reference_datetime)
 
 #pull out 1 horizon for fig 4 (stratified so that all DA freqs assimilate data on same day)
-DA_sub <- DA[DA$reference_datetime=="2021-07-22",] 
-obs <- DA[DA$reference_datetime>="2021-06-24" & DA$reference_datetime <= "2021-08-25" &
+DA_sub <- DA[DA$reference_datetime=="2021-07-21",] 
+obs <- DA[DA$reference_datetime>="2021-06-24" & DA$reference_datetime <= "2021-08-24" &
             DA$horizon==1 & DA$model_id=="Daily",] #DA for one month starting on the day that all DA frequencies assimilate data
 
 #change date format
@@ -582,13 +582,30 @@ obs$depth[obs$datetime=="2021-07-13" & obs$depth==10][1] <- 9
 #change order of DA frequencies so daily is plotted on top
 DA_sub_final$model_id <- factor(DA_sub_final$model_id, levels=rev(levels(DA_sub_final$model_id)))
 
+#color most recent DA date for each freq
+obs$col <- ifelse(obs$datetime=="2021-07-21", "Daily",
+                    ifelse(obs$datetime=="2021-07-16", "Weekly",
+                           ifelse(obs$datetime=="2021-07-09", "Fortnightly",
+                                  ifelse(obs$datetime=="2021-06-25", "Monthly", NA))))
+
+obs$siz <- ifelse(is.na(obs$col), "small", "big")
+
+#order DA freq in col column
+obs$col <- factor(obs$col, levels=levels(DA_sub_final$model_id))
+
 ggplot(subset(DA_sub_final, depth %in% c(1,5,9)), aes(horizon, forecast_mean, color=model_id)) + 
-  geom_ribbon(data=subset(DA_sub_final, depth %in% c(1,5,9)), aes(x=date, 
-                  y = forecast_mean, ymin = forecast_mean-forecast_sd, 
+  geom_ribbon(aes(x=date, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
                   ymax = forecast_mean+forecast_sd, 
                   color=model_id, fill=model_id),alpha=0.4) + theme_bw() + 
+  scale_fill_manual(values=rev(cb_friendly_2), 
+                    labels=c("Daily","Weekly","Fortnightly","Monthly")) + 
+  guides(fill="none") + new_scale_fill() +
+  geom_vline(xintercept=as.Date("2021-07-21")) +
   geom_point(data=subset(obs, depth %in% c(1,5,9)), 
-             aes(x=datetime, y=observation), col="black", size=0.3) +  
+             aes(x=datetime, y=observation, size=siz, fill=col), 
+             pch=21, color="black") + 
+  scale_fill_manual(values=c(rev(cb_friendly_2)), 
+                    labels=c("Daily","Weekly","Fortnightly","Monthly", "")) +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), 
         legend.position = "right", legend.box.margin=margin(-10,-1,-10,-10),
         legend.background = element_blank(), panel.grid.minor = element_blank(), 
@@ -600,12 +617,14 @@ ggplot(subset(DA_sub_final, depth %in% c(1,5,9)), aes(horizon, forecast_mean, co
   facet_wrap(~depth, ncol = 1, scales = "free_y") +
   ylab(expression("Temperature ("*~degree*C*")")) + xlab("")  + 
   scale_color_manual(values=rev(cb_friendly_2)) + 
-  scale_fill_manual(values=rev(cb_friendly_2)) + 
-  geom_vline(xintercept=as.Date("2021-07-23")) +
-  geom_text(x=as.Date("2021-07-20"), y=31.3, label="Past", color="black", size=2) +
-  geom_text(x=as.Date("2021-07-27"), y=31.3, label="Future", color="black", size=2) +
+  scale_size_manual(values=c(0.8,0.1)) +
+  geom_text(x=as.Date("2021-07-18"), y=31.7, label="Past", color="black", size=2) +
+  geom_text(x=as.Date("2021-07-25"), y=31.7, label="Future", color="black", size=2) +
   guides(fill = guide_legend(title="DA frequency", 
-                             override.aes = list(alpha=1),reverse = TRUE), color="none")
+                             override.aes = list(alpha=1,
+                                                pch=c(rep(21,4),NA),
+                                                fill=c(cb_friendly_2,NA)),reverse = FALSE), 
+         color="none", size="none")
 ggsave(file.path(lake_directory,"analysis/figures/forecast_ProofOfConcept_fig4.jpg"), width=3.5, height=4) 
 
 #uncertainty range across depths and mixed vs stratified periods
@@ -905,20 +924,24 @@ names(depths) <- c("1","5","9")
 #order factor levels
 kw_horizons$model_id <- factor(kw_horizons$model_id, levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
-figs1 <- ggplot(subset(kw_horizons, horizon %in% c(1,7,35) & depth %in% c(1,5,9)),
-       aes(model_id, RMSE, fill=as.factor(horizon))) +  ylab("CRPS") + xlab("")+ ylim(0,3) +
-  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="Horizon")) +
-  scale_fill_manual(values=c("#81A665","#E0CB48","#D08151"),labels = c("1day", "7day", "35day")) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.31),
-        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
-        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-        legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
-  geom_text(data=letters,aes(x=model_id,y=0.2+max.RMSE,label=letter),hjust=0.1,vjust = -0.1, size=2.5) +
-  facet_grid(depth~phen, scales="free_y",labeller = labeller(depth = depths)) 
+figs1 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,
+               aes(horizon, CRPS, color=as.factor(model_id))) +  
+  ylab("CRPS") + xlab("Horizon (days)")+
+  geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + 
+  ylim(0,2) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), 
+        legend.position = "right", legend.background = element_blank(),
+        panel.grid.minor = element_blank(), legend.key.size = unit(0.5, "lines"), 
+        panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
+        legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), 
+        legend.title = element_text(size=6), axis.text.x = element_text(vjust = 0.5,size=6), 
+        axis.text.y = element_text(size=6)) + #geom_point() +
+  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + 
+  scale_color_manual(values=cb_friendly_2) 
 
-tag_facet2(figs1, fontface = 1, hjust=0, size=3,
-                              tag_pool = c("a","b","c","d","e","f"))
+tag_facet2(figs1, fontface = 1, size=3,
+           tag_pool = c("a","b","c","d","e","f"))
+
 ggsave(file.path(lake_directory,"analysis/figures/CRPSvsDAfreq_depth_facets_figs1.jpg"),width=3.5, height=4)
 
 #------------------------------------------------------------------------------#
