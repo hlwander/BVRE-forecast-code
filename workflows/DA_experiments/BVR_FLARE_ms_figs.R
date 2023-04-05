@@ -2,7 +2,7 @@
 #09 Sep 2022 HLW
 
 #load libraries
-pacman::p_load(dplyr,readr,ggplot2, FSA, AnalystHelper, rcompanion, rstatix, ggpubr, stringr, egg, viridis, padr, ggnewscale)
+pacman::p_load(dplyr,readr,ggplot2, FSA, AnalystHelper, rcompanion, rstatix, ggpubr, stringr, egg, viridis, padr, ggnewscale, purrr)
 
 #change tag_facet code
 tag_facet2 <- function(p, open = "(", close = ")", tag_pool = letters, x = -Inf, y = Inf, 
@@ -539,15 +539,23 @@ DA <- all_DA_forecasts
 DA$reference_datetime <- as.POSIXct(DA$reference_datetime)
 
 #pull out 1 horizon for fig 4 (stratified so that all DA freqs assimilate data on same day)
-DA_sub <- DA[DA$reference_datetime=="2021-07-21",] 
-obs <- DA[DA$reference_datetime>="2021-06-24" & DA$reference_datetime <= "2021-08-24" &
+all_da_sub <- DA[DA$reference_datetime=="2021-07-22" & DA$model_id=="Daily" | 
+                 DA$reference_datetime=="2021-07-16" & DA$model_id=="Weekly" |
+                   DA$reference_datetime=="2021-07-09" & DA$model_id=="Fortnightly" |
+                   DA$reference_datetime=="2021-06-25" & DA$model_id=="Monthly",] 
+
+#change 10m to 9m for horizon 0-2 for fortnightly example
+all_da_sub$depth[all_da_sub$depth==10 & all_da_sub$model_id=="Fortnightly"] <- 9
+
+
+obs <- DA[DA$reference_datetime>="2021-06-24" & DA$reference_datetime <= "2021-08-25" &
             DA$horizon==1 & DA$model_id=="Daily",] #DA for one month starting on the day that all DA frequencies assimilate data
 
 #change date format
 obs$datetime <- as.Date(obs$datetime)
 
 #summary df to average the forecasts for each DA freq, horizon, depth, and date
-DA_sub_final <- plyr::ddply(DA_sub, c("depth","horizon","reference_datetime", "model_id"), function(x) {
+all_da_sub_final <- plyr::ddply(all_da_sub, c("depth","horizon","reference_datetime", "model_id"), function(x) {
   data.frame(
     forecast_mean = mean(x$mean, na.rm = TRUE),
     forecast_sd = mean(x$sd, na.rm = TRUE),
@@ -557,18 +565,19 @@ DA_sub_final <- plyr::ddply(DA_sub, c("depth","horizon","reference_datetime", "m
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
+
 #change datetime format
-DA_sub_final$reference_datetime <- as.Date(DA_sub_final$reference_datetime)
+all_da_sub_final$reference_datetime <- as.Date(all_da_sub_final$reference_datetime)
 
 #round depth to nearest m
-DA_sub_final$depth <- floor(DA_sub_final$depth)
+all_da_sub_final$depth <- floor(all_da_sub_final$depth)
 obs$depth <- floor(obs$depth)
 
 #change DA factor order
-DA_sub_final$model_id <- factor(DA_sub_final$model_id, levels = c("Daily", "Weekly","Fortnightly","Monthly"))
+all_da_sub_final$model_id <- factor(all_da_sub_final$model_id, levels = c("Daily", "Weekly","Fortnightly","Monthly"))
 
 #add new column for date (reference_datetime + horizon)
-DA_sub_final$date <- DA_sub_final$reference_datetime + DA_sub_final$horizon
+all_da_sub_final$date <- all_da_sub_final$reference_datetime + all_da_sub_final$horizon
 
 #change first 10 to 9m for 6jul-13Jul - super hacky...
 obs$depth[obs$datetime=="2021-07-06" & obs$depth==10][1] <- 9
@@ -580,10 +589,10 @@ obs$depth[obs$datetime=="2021-07-11" & obs$depth==10][1] <- 9
 obs$depth[obs$datetime=="2021-07-13" & obs$depth==10][1] <- 9
 
 #change order of DA frequencies so daily is plotted on top
-DA_sub_final$model_id <- factor(DA_sub_final$model_id, levels=rev(levels(DA_sub_final$model_id)))
+all_da_sub_final$model_id <- factor(all_da_sub_final$model_id, levels=rev(levels(all_da_sub_final$model_id)))
 
 #color most recent DA date for each freq
-obs$col <- ifelse(obs$datetime=="2021-07-21", "Daily",
+obs$col <- ifelse(obs$datetime=="2021-07-22", "Daily",
                     ifelse(obs$datetime=="2021-07-16", "Weekly",
                            ifelse(obs$datetime=="2021-07-09", "Fortnightly",
                                   ifelse(obs$datetime=="2021-06-25", "Monthly", NA))))
@@ -591,16 +600,29 @@ obs$col <- ifelse(obs$datetime=="2021-07-21", "Daily",
 obs$siz <- ifelse(is.na(obs$col), "small", "big")
 
 #order DA freq in col column
-obs$col <- factor(obs$col, levels=levels(DA_sub_final$model_id))
+obs$col <- factor(obs$col, levels=levels(all_da_sub_final$model_id))
 
-ggplot(subset(DA_sub_final, depth %in% c(1,5,9)), aes(horizon, forecast_mean, color=model_id)) + 
-  geom_ribbon(aes(x=date, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
-                  ymax = forecast_mean+forecast_sd, 
-                  color=model_id, fill=model_id),alpha=0.4) + theme_bw() + 
+ggplot(subset(all_da_sub_final, depth %in% c(1,5,9)), aes(horizon, forecast_mean, color=model_id)) + 
+  geom_ribbon(data=subset(all_da_sub_final, depth %in% c(1,5,9) & model_id=="Daily"), 
+              aes(x=date, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
+                  ymax = forecast_mean+forecast_sd), color=cb_friendly_2[1], 
+              fill=cb_friendly_2[1], alpha=0.4) + 
+  geom_ribbon(data=subset(all_da_sub_final, depth %in% c(1,5,9) & model_id=="Weekly"), 
+              aes(x=date, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
+                  ymax = forecast_mean+forecast_sd), color=cb_friendly_2[2], 
+              fill=cb_friendly_2[2], alpha=0.4) + 
+  geom_ribbon(data=subset(all_da_sub_final, depth %in% c(1,5,9) & model_id=="Fortnightly"), 
+              aes(x=date, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
+                  ymax = forecast_mean+forecast_sd), color=cb_friendly_2[3], 
+              fill=cb_friendly_2[3], alpha=0.4) + 
+  geom_ribbon(data=subset(all_da_sub_final, depth %in% c(1,5,9) & model_id=="Monthly"), 
+              aes(x=date, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
+                  ymax = forecast_mean+forecast_sd), color=cb_friendly_2[4], 
+              fill=cb_friendly_2[4], alpha=0.4) + theme_bw() + 
   scale_fill_manual(values=rev(cb_friendly_2), 
                     labels=c("Daily","Weekly","Fortnightly","Monthly")) + 
   guides(fill="none") + new_scale_fill() +
-  geom_vline(xintercept=as.Date("2021-07-21")) +
+  geom_vline(xintercept=as.Date("2021-07-22")) +
   geom_point(data=subset(obs, depth %in% c(1,5,9)), 
              aes(x=datetime, y=observation, size=siz, fill=col), 
              pch=21, color="black") + 
@@ -618,8 +640,8 @@ ggplot(subset(DA_sub_final, depth %in% c(1,5,9)), aes(horizon, forecast_mean, co
   ylab(expression("Temperature ("*~degree*C*")")) + xlab("")  + 
   scale_color_manual(values=rev(cb_friendly_2)) + 
   scale_size_manual(values=c(0.8,0.1)) +
-  geom_text(x=as.Date("2021-07-18"), y=31.7, label="Past", color="black", size=2) +
-  geom_text(x=as.Date("2021-07-25"), y=31.7, label="Future", color="black", size=2) +
+  geom_text(x=as.Date("2021-07-18"), y=24, label="Past", color="black", size=2) + #31.7
+  geom_text(x=as.Date("2021-07-26"), y=24, label="Future", color="black", size=2) +
   guides(fill = guide_legend(title="DA frequency", 
                              override.aes = list(alpha=1,
                                                 pch=c(rep(21,4),NA),
