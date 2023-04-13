@@ -823,7 +823,8 @@ UC_depth <- rbind(forecast_depth_avg_yesIC,forecast_depth_avg)
 UC$depth <- ceiling(UC$depth)
 UC_depth$depth <- ceiling(UC_depth$depth)
 
-IC <- ggplot(subset(UC_depth, depth %in% c(1,5,9)), aes(model_id, RMSE, fill=as.factor(IC))) +  ylab("RMSE") + xlab("")+
+IC <- ggplot(subset(UC_depth, depth %in% c(1,5,9)), aes(model_id, RMSE, fill=as.factor(IC))) +  
+  ylab(expression("RMSE ("*~degree*C*")")) + xlab("")+
   geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="IC")) + geom_hline(yintercept=2,linetype="dashed") +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
         legend.background = element_blank(), panel.grid.minor = element_blank(), legend.box.margin=margin(-10,-1,-10,-10),

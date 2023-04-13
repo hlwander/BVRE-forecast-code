@@ -432,7 +432,7 @@ kw_horizons$model_id <- factor(kw_horizons$model_id, levels = c("Daily", "Weekly
 ggplot(forecast_avg ,aes(horizon, RMSE, color=as.factor(model_id))) +  
   ylab(expression("RMSE ("*~degree*C*")")) + xlab("Horizon (days)")+
   geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + 
-  geom_hline(yintercept = 2, linetype="dotted") + ylim(0,3.2) +
+  geom_hline(yintercept = 2, linetype="dotted") + ylim(0,2.2) +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
         legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
         legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
@@ -465,7 +465,7 @@ ggsave(file.path(lake_directory,"analysis/figures/RMSEvshorizon_depth_facets_fig
 
 fig8 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,aes(horizon, variance, color=as.factor(model_id))) +  
   ylab("Variance") + xlab("Horizon (days)")+
-  geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + ylim(0,8.3) + 
+  geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + ylim(0,7) + 
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
         legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
         legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
@@ -960,7 +960,7 @@ kw_horizons$model_id <- factor(kw_horizons$model_id, levels = c("Daily", "Weekly
 
 figs1 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9)) ,
                aes(horizon, CRPS, color=as.factor(model_id))) +  
-  ylab("CRPS") + xlab("Horizon (days)")+
+  ylab(expression("CRPS ("*~degree*C*")")) + xlab("Horizon (days)")+
   geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + 
   ylim(0,2) +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), 
