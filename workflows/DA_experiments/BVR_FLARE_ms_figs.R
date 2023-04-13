@@ -602,23 +602,23 @@ obs$siz <- ifelse(is.na(obs$col), "small", "big")
 #order DA freq in col column
 obs$col <- factor(obs$col, levels=levels(all_da_sub_final$model_id))
 
-ggplot(subset(all_da_sub_final, depth %in% c(1,5,9)), aes(horizon, forecast_mean, color=model_id)) + 
-  geom_ribbon(data=subset(all_da_sub_final, depth %in% c(1,5,9) & model_id=="Daily"), 
-              aes(x=date, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
-                  ymax = forecast_mean+forecast_sd), color=cb_friendly_2[1], 
-              fill=cb_friendly_2[1], alpha=0.4) + 
-  geom_ribbon(data=subset(all_da_sub_final, depth %in% c(1,5,9) & model_id=="Weekly"), 
-              aes(x=date, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
-                  ymax = forecast_mean+forecast_sd), color=cb_friendly_2[2], 
-              fill=cb_friendly_2[2], alpha=0.4) + 
-  geom_ribbon(data=subset(all_da_sub_final, depth %in% c(1,5,9) & model_id=="Fortnightly"), 
-              aes(x=date, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
-                  ymax = forecast_mean+forecast_sd), color=cb_friendly_2[3], 
-              fill=cb_friendly_2[3], alpha=0.4) + 
+fig4_poc <- ggplot(subset(all_da_sub_final, depth %in% c(1,5,9)), aes(horizon, forecast_mean, color=model_id)) + 
   geom_ribbon(data=subset(all_da_sub_final, depth %in% c(1,5,9) & model_id=="Monthly"), 
               aes(x=date, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
                   ymax = forecast_mean+forecast_sd), color=cb_friendly_2[4], 
-              fill=cb_friendly_2[4], alpha=0.4) + theme_bw() + 
+              fill=cb_friendly_2[4], alpha=0.4) +
+  geom_ribbon(data=subset(all_da_sub_final, depth %in% c(1,5,9) & model_id=="Fortnightly"), 
+              aes(x=date, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
+                  ymax = forecast_mean+forecast_sd), color=cb_friendly_2[3], 
+              fill=cb_friendly_2[3], alpha=0.4) +
+  geom_ribbon(data=subset(all_da_sub_final, depth %in% c(1,5,9) & model_id=="Weekly"), 
+              aes(x=date, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
+                  ymax = forecast_mean+forecast_sd), color=cb_friendly_2[2], 
+              fill=cb_friendly_2[2], alpha=0.4)  +
+  geom_ribbon(data=subset(all_da_sub_final, depth %in% c(1,5,9) & model_id=="Daily"), 
+              aes(x=date, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
+                  ymax = forecast_mean+forecast_sd), color=cb_friendly_2[1], 
+              fill=cb_friendly_2[1], alpha=0.4) + theme_bw() + 
   scale_fill_manual(values=rev(cb_friendly_2), 
                     labels=c("Daily","Weekly","Fortnightly","Monthly")) + 
   guides(fill="none") + new_scale_fill() +
@@ -640,13 +640,15 @@ ggplot(subset(all_da_sub_final, depth %in% c(1,5,9)), aes(horizon, forecast_mean
   ylab(expression("Temperature ("*~degree*C*")")) + xlab("")  + 
   scale_color_manual(values=rev(cb_friendly_2)) + 
   scale_size_manual(values=c(0.8,0.1)) +
-  geom_text(x=as.Date("2021-07-18"), y=24, label="Past", color="black", size=2) + #31.7
+  geom_text(x=as.Date("2021-07-18"), y=24, label="Past", color="black", size=2) + 
   geom_text(x=as.Date("2021-07-26"), y=24, label="Future", color="black", size=2) +
   guides(fill = guide_legend(title="DA frequency", 
                              override.aes = list(alpha=1,
                                                 pch=c(rep(21,4),NA),
                                                 fill=c(cb_friendly_2,NA)),reverse = FALSE), 
          color="none", size="none")
+tag_facet2(fig4_poc, fontface = 1, hjust=0.7, size=3,
+           tag_pool = c("a","b","c"),  x = as.Date("2021-06-24"))  
 ggsave(file.path(lake_directory,"analysis/figures/forecast_ProofOfConcept_fig4.jpg"), width=3.5, height=4) 
 
 
