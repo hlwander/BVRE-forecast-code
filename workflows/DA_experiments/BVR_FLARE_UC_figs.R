@@ -23,17 +23,14 @@ setwd(lake_directory)
 #read in all forecasts 
 score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/UC"))
 all_DA_forecasts <- arrow::open_dataset(score_dir) |> collect() |>   
-  filter(!is.na(observation), variable == "temperature",horizon > 1) #need to start on day 2 because this is actually day 1
+  filter(!is.na(observation), variable == "temperature",horizon > 0.3) 
 
 
-#need to round horizon becuase they are in decimal form for some reason...
-all_DA_forecasts$horizon <- ceiling(all_DA_forecasts$horizon)
+#need to round horizon because they are in decimal form for all Jan 1 ref date
+all_DA_forecasts$horizon <- floor(all_DA_forecasts$horizon)
 
 #round depths up to nearest m 
-all_DA_forecasts$depth <- ceiling(all_DA_forecasts$depth)
-
-#fix horizon issue because flare calls day 0 day 1 (so horizons go out to 36 days)
-all_DA_forecasts$horizon <- all_DA_forecasts$horizon - 1
+#all_DA_forecasts$depth <- ceiling(all_DA_forecasts$depth)
 
 #add a group number so that I can average horizons later on
 all_DA_forecasts <- all_DA_forecasts %>% 
@@ -78,57 +75,6 @@ forecast_skill_depth_horizon <-  plyr::ddply(all_DA_forecasts, c("depth","horizo
     sd = mean(x$sd)
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
-
-
-#quickly looking at variance among dates in forecast period
-#add month column
-all_DA_forecasts$month <- format(as.Date(all_DA_forecasts$reference_datetime),"%b")
-
-variance_2021_months <-  plyr::ddply(all_DA_forecasts, c("month","horizon", "model_id","depth"), function(x) { #phen instead of datetime?
-  data.frame(
-    mean = mean(x$mean),
-    sd = mean(x$sd),
-    variance = (mean(x$sd))^2
-  )
-}, .progress = plyr::progress_text(), .parallel = FALSE) 
-
-
-ggplot(subset(variance_2021_months, model_id=="Daily" & depth==1), aes(horizon, variance)) + geom_line() +
-  theme_bw() + facet_wrap(~month)
-
-
-#averaging across all months
-variance_2021_days_year <-  plyr::ddply(all_DA_forecasts, c("horizon", "model_id"), function(x) { #phen instead of datetime?
-  data.frame(
-    mean = mean(x$mean),
-    sd = mean(x$sd),
-    variance = (mean(x$sd))^2
-  )
-}, .progress = plyr::progress_text(), .parallel = FALSE) 
-
-ggplot(subset(variance_2021_days_year, model_id=="Daily"), aes(horizon, variance)) +
-  geom_line() + theme_bw() 
-
-variance_2021_days <-  plyr::ddply(all_DA_forecasts, c("datetime","horizon", "model_id","depth"), function(x) { #phen instead of datetime?
-  data.frame(
-    mean = mean(x$mean),
-    sd = mean(x$sd),
-    variance = (mean(x$sd))^2
-  )
-}, .progress = plyr::progress_text(), .parallel = FALSE) 
-
-#only select april
-
-variance_2021_days$datetime <- as.Date(variance_2021_days$datetime)
-variance_2021_april <- variance_2021_days[variance_2021_days$datetime %in% 
-                                            seq(as.Date("2021-04-01"),as.Date("2021-04-30"),by="day"),]
-
-
-#look at variance for every day in april to see which noaa forecasts may be problematic 
-ggplot(subset(variance_2021_april, model_id=="Daily" & depth==1),
-       aes(horizon, variance)) + geom_vline(xintercept=16, linetype=2) +
-  geom_line() + theme_bw()+facet_wrap(~datetime)
-
 
 #df with averaged forecast skill for all days (group by horizon, DA, and phen)
 forecast_horizon_avg <- plyr::ddply(all_DA_forecasts, c("horizon", "model_id", "phen"), function(x) {
@@ -677,18 +623,24 @@ params$model_id <- str_to_title(params$model_id)
 #change DA factor order
 params$model_id <- factor(params$model_id, levels = c("Daily", "Weekly","Fortnightly","Monthly"))
 
-ggplot(subset(params,horizon %in% c(1)), aes(datetime, mean, color=model_id)) + theme_bw() +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.6,0.98),
-        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
-        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-        legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
-  scale_color_manual(values=cb_friendly_2) +
-  scale_fill_manual(values=cb_friendly_2) +
-  facet_wrap(~variable, scales="free_y",ncol=1) + ylab("parameter")+ xlab("")+
-  scale_x_date(date_labels = "%b") + #ylab(expression("Temperature ("*~degree*C*")")) 
-  geom_ribbon(aes(y = mean, ymin = mean-sd, ymax = mean+sd, color=model_id, fill=model_id), alpha=0.5) +
-  guides(fill = guide_legend(title="DA frequency", override.aes = list(alpha=1)), color="none")
+variable <- c("longwave","hypo_sed_temp","epi_sed_temp")
+names(variable) <- c("lw_factor","zone1temp","zone2temp")
+
+UC_param_evol <- ggplot(subset(params,horizon %in% c(1)), aes(datetime, mean, color=model_id)) + theme_bw() +
+                    theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position ="right",
+                      legend.background = element_blank(), panel.grid.minor = element_blank(), legend.box.margin=margin(-10,-1,-10,-10),
+                      plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
+                      legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
+                      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
+                      scale_color_manual(values=cb_friendly_2) +
+                      scale_fill_manual(values=cb_friendly_2) +
+                      facet_wrap(~variable, scales="free_y",ncol=1) + ylab("parameter")+ xlab("")+
+                      scale_x_date(date_labels = "%b") + #ylab(expression("Temperature ("*~degree*C*")")) 
+                      geom_ribbon(aes(y = mean, ymin = mean-sd, ymax = mean+sd, color=model_id, fill=model_id), alpha=0.5) +
+                      guides(fill = guide_legend(title="DA frequency", override.aes = list(alpha=1)), color="none")
+
+tag_facet2(UC_param_evol, fontface = 1, x=as.Date("2021-01-01"), hjust=0.7, size=3,
+           tag_pool = c("a","b","c"))
 #ggsave(file.path(lake_directory,"analysis/figures/UC_paramevolvsHorizon.jpg"),width=3.5, height=4)
 
 #figuring out the date that DA parameters diverge
@@ -720,13 +672,13 @@ mean(c(last(params$mean[params$variable=="zone2temp" & params$model_id=="Daily"]
 #read in all forecasts with IC on
 score_dir_yesIC <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/DA_study"))
 all_DA_forecasts_yesIC <- arrow::open_dataset(score_dir_yesIC) |> collect() |>   
-  filter(!is.na(observation), variable == "temperature",horizon > 1)
+  filter(!is.na(observation), variable == "temperature",horizon > 0.3)
+
+#need to round horizon because they are in decimal form for all Jan 1 ref date
+all_DA_forecasts_yesIC$horizon <- floor(all_DA_forecasts_yesIC$horizon)
 
 #round depths up to nearest m 
-all_DA_forecasts_yesIC$depth <- ceiling(all_DA_forecasts_yesIC$depth)
-
-#fix horizon issue because flare calls day 0 day 1 (so horizons go out to 36 days)
-all_DA_forecasts_yesIC$horizon <- all_DA_forecasts_yesIC$horizon - 1
+#all_DA_forecasts_yesIC$depth <- ceiling(all_DA_forecasts_yesIC$depth)
 
 #add a group number so that I can average horizons later on
 all_DA_forecasts_yesIC <- all_DA_forecasts_yesIC %>% 
@@ -831,7 +783,7 @@ IC <- ggplot(subset(UC_depth, depth %in% c(1,5,9)), aes(model_id, RMSE, fill=as.
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
-  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
+  facet_grid(depth~phen,labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
 
 tag_facet2(IC, fontface = 1, hjust=0, size=3, tag_pool = c("a","b","c","d","e","f"))
 ggsave(file.path(lake_directory,"analysis/figures/UC_RMSEvsDAfreq_depth_facets_IC_allhorizons.jpg"),width=3.5, height=4)
@@ -856,7 +808,7 @@ fig8 <- ggplot(subset(UC_depth, depth %in% c(1,5,9)) ,aes(model_id, variance, fi
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
         legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
-  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
+  facet_grid(depth~phen,labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
 
 tag_facet2(fig8, fontface = 1, size=3, tag_pool = c("a","b","c","d","e","f"))  
 ggsave(file.path(lake_directory,"analysis/figures/UC_variancevsDAfreq_depth_facets_IC.jpg"),width=3.5, height=4)
@@ -897,7 +849,7 @@ fig9 <- ggplot(subset(UC_prop, depth %in% c(1,5,9)) ,
   ylab("Proportion of IC uncertainty") + 
   geom_line() + theme_bw() +# geom_point() +
   guides(color=guide_legend(title="DA frequency")) + 
-  xlab("Horizon (Days)")+ ylim(-0.06, 0.75) +
+  xlab("Horizon (Days)")+ ylim(-0.14, 0.85) +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"),
         legend.position = "right",
         legend.background = element_blank(), 
@@ -915,6 +867,8 @@ fig9 <- ggplot(subset(UC_prop, depth %in% c(1,5,9)) ,
 
 tag_facet2(fig9, fontface = 1, size=3, tag_pool = c("a","b","c","d","e","f"))  
 ggsave(file.path(lake_directory,"analysis/figures/UC_prop_ICdvshorizon_depth_facets_var.jpg"),width=3.5, height=4)
+
+mean(UC_prop$prop_var[UC_prop$horizon==1 & UC_prop$model_id=="Daily"])
 
 mean(UC_prop$prop_var[UC_prop$horizon==1 & UC_prop$model_id=="Monthly"])
 
