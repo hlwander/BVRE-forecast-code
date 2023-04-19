@@ -20,7 +20,7 @@ lake_directory <- here::here()
 setwd(lake_directory)
 
 #read in all forecasts 
-score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/da_study"))
+score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/all_UC"))
 all_DA_forecasts <- arrow::open_dataset(score_dir) |> collect() |>   
   filter(!is.na(observation), variable == "temperature",horizon >= 0, 
          as.Date(reference_datetime) > "2020-12-31") 
