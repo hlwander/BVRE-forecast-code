@@ -21,7 +21,7 @@ lake_directory <- here::here()
 setwd(lake_directory)
 
 #read in all forecasts 
-score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/UC"))
+score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/IC_off"))
 all_DA_forecasts <- arrow::open_dataset(score_dir) |> collect() |>   
   filter(!is.na(observation), variable == "temperature",horizon > 0.3) 
 
@@ -607,7 +607,7 @@ ggarrange(horiz, depth,
 #------------------------------------------------------------------------------------------------#
 #parameter evolution figs 
 #read in all forecasts 
-params_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/UC"))
+params_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/IC_off"))
 params <- arrow::open_dataset(score_dir) |> collect() |>   
   filter(variable %in% c("lw_factor","zone1temp","zone2temp"), horizon >=0)
 
@@ -670,7 +670,7 @@ mean(c(last(params$mean[params$variable=="zone2temp" & params$model_id=="Daily"]
 # Forecasts with IC on vs off
 
 #read in all forecasts with IC on
-score_dir_yesIC <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/DA_study"))
+score_dir_yesIC <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/all_UC"))
 all_DA_forecasts_yesIC <- arrow::open_dataset(score_dir_yesIC) |> collect() |>   
   filter(!is.na(observation), variable == "temperature",horizon > 0.3)
 
