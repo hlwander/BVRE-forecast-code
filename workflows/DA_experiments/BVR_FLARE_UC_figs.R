@@ -106,506 +106,11 @@ forecast_depth_avg <- plyr::ddply(all_DA_forecasts, c("depth", "model_id", "phen
 #order DA frequencies
 forecast_depth_avg$model_id <- factor(forecast_depth_avg$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
+#------------------------------------------------------------------------------------------------#
+#FIGURES: parameter evolution figs 
 
-#------------------------------------------------------------------------------#
-#FIGURES
 cb_friendly_2 <- c("#8C510A", "#BF812D", "#C7EAE5", "#35978F") #"#DFC27D", "#DEDEDE",
 
-#FIGURE 5: DA frequency boxplots for 1, 5, and 9m and 1, 7, and 35-day horizons
-
-#creating smaller dataset for kw test w/ 1,5,9m and 1,7,35 days
-kw_horizons <- forecast_skill_depth_horizon #[forecast_skill_depth_horizon$depth %in% c(1,5,9) & forecast_skill_depth_horizon$horizon %in% c(1,7,35),]
-
-#kruskal wallis and dunn tests for 1m stratified rmse across DA freq
-kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==1] ~ 
-               kw_horizons$model_id[kw_horizons$phen=="Stratified" & kw_horizons$depth==1])
-dunn_strat_1m <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==1] ~ 
-                            kw_horizons$model_id[kw_horizons$phen=="Stratified" & kw_horizons$depth==1])
-rslt_strat_1m=toupper(cldList(P.adj ~ Comparison, data=dunn_strat_1m$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-median_strat_1m_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==1 & kw_horizons$model_id=="Daily"])
-median_strat_1m_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==1 & kw_horizons$model_id=="Weekly"])
-median_strat_1m_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==1 & kw_horizons$model_id=="Fortnightly"])
-median_strat_1m_monthly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==1 & kw_horizons$model_id=="Monthly"])
-
-#kruskal wallis and dunn tests for 5m stratified rmse across DA freq
-kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==5] ~ 
-               as.factor(kw_horizons$model_id[kw_horizons$phen=="Stratified" & kw_horizons$depth==5]))
-dunn_strat_5m <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==5] ~ 
-                            as.factor(kw_horizons$model_id[kw_horizons$phen=="Stratified" & kw_horizons$depth==5]))
-rslt_strat_5m=toupper(cldList(P.adj ~ Comparison, data=dunn_strat_5m$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-rslt_strat_5m <- c("b","a","b","c")
-median_strat_5m_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==5  & kw_horizons$model_id=="Daily"])
-median_strat_5m_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==5  & kw_horizons$model_id=="Weekly"])
-median_strat_5m_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==5  & kw_horizons$model_id=="Fortnightly"])
-median_strat_5m_monthly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==5  & kw_horizons$model_id=="Monthly"])
-
-#kruskal wallis and dunn tests for 9m stratified rmse across DA freq
-kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==9] ~ 
-               as.factor(kw_horizons$model_id[kw_horizons$phen=="Stratified" & kw_horizons$depth==9]))
-dunn_strat_9m <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==9] ~ 
-                            as.factor(kw_horizons$model_id[kw_horizons$phen=="Stratified" & kw_horizons$depth==9]))
-rslt_strat_9m=toupper(cldList(P.adj ~ Comparison, data=dunn_strat_9m$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-rslt_strat_9m <- c("a","b","c","d")
-median_strat_9m_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==9 & kw_horizons$model_id=="Daily"])
-median_strat_9m_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==9 & kw_horizons$model_id=="Weekly"])
-median_strat_9m_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==9 & kw_horizons$model_id=="Fortnightly"])
-median_strat_9m_monthly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$depth==9 & kw_horizons$model_id=="Monthly"])
-
-#kruskal wallis and dunn tests for 1m mixed rmse across DA freq
-kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==1] ~ 
-               as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$depth==1]))
-dunn_mix_1m <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==1] ~ 
-                          as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$depth==1]))
-rslt_mix_1m=toupper(cldList(P.adj ~ Comparison, data=dunn_mix_1m$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-rslt_mix_1m <- c("c","a","ab","bc")
-median_mix_1m_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==1 & kw_horizons$model_id=="Daily"])
-median_mix_1m_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==1 & kw_horizons$model_id=="Weekly"])
-median_mix_1m_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==1 & kw_horizons$model_id=="Fortnightly"])
-median_mix_1m_monthly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==1 & kw_horizons$model_id=="Monthly"])
-
-#kruskal wallis and dunn tests for 5m mixed rmse across DA freq
-kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==5] ~ 
-               as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$depth==5]))
-dunn_mix_5m <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==5] ~ 
-                          as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$depth==5]))
-rslt_mix_5m=toupper(cldList(P.adj ~ Comparison, data=dunn_mix_5m$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-rslt_mix_5m <- c("c","a","b","bc")
-median_mix_5m_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==5 & kw_horizons$model_id=="Daily"])
-median_mix_5m_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==5 & kw_horizons$model_id=="Weekly"])
-median_mix_5m_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==5 & kw_horizons$model_id=="Fortnightly"])
-median_mix_5m_monthly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==5 & kw_horizons$model_id=="Monthly"])
-
-#kruskal wallis and dunn tests for 9m mixed rmse across DA freq
-kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==9] ~ 
-               as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$depth==9]))
-dunn_mix_9m <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==9] ~ 
-                          as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$depth==9]))
-rslt_mix_9m=toupper(cldList(P.adj ~ Comparison, data=dunn_mix_9m$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-rslt_mix_9m <- c("c","a","b","bc")
-median_mix_9m_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==9 & kw_horizons$model_id=="Daily"])
-median_mix_9m_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==9 & kw_horizons$model_id=="Weekly"])
-median_mix_9m_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==9 & kw_horizons$model_id=="Fortnightly"])
-median_mix_9m_monthly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==9 & kw_horizons$model_id=="Monthly"])
-
-#Now aggregate across depths
-#kruskal wallis and dunn tests for 1d stratified rmse across DA freq
-kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon==1] ~ 
-               kw_horizons$model_id[kw_horizons$phen=="Stratified" & kw_horizons$horizon==1])
-dunn_strat_1d <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon==1] ~ 
-                            kw_horizons$model_id[kw_horizons$phen=="Stratified" & kw_horizons$horizon==1])
-rslt_strat_1d=toupper(cldList(P.adj ~ Comparison, data=dunn_strat_1d$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-rslt_strat_1d <- c("a","ab","bc","c")
-median_strat_1d_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon ==1 & kw_horizons$model_id=="Daily"])
-median_strat_1d_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon ==1 & kw_horizons$model_id=="Weekly"])
-median_strat_1d_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon ==1 & kw_horizons$model_id=="Fortnightly"])
-median_strat_1d_monthly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon ==1 & kw_horizons$model_id=="Monthly"])
-
-#kruskal wallis and dunn tests for 7d stratified rmse across DA freq
-kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon==7] ~ 
-               as.factor(kw_horizons$model_id[kw_horizons$phen=="Stratified" & kw_horizons$horizon==7]))
-dunn_strat_7d <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon==7] ~ 
-                            as.factor(kw_horizons$model_id[kw_horizons$phen=="Stratified" & kw_horizons$horizon==7]))
-rslt_strat_7d=toupper(cldList(P.adj ~ Comparison, data=dunn_strat_7d$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-median_strat_7d_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon ==7 & kw_horizons$model_id=="Daily"])
-median_strat_7d_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon ==7 & kw_horizons$model_id=="Weekly"])
-median_strat_7d_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon ==7 & kw_horizons$model_id=="Fortnightly"])
-median_strat_7d_monthly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon ==7 & kw_horizons$model_id=="Monthly"])
-
-#kruskal wallis and dunn tests for 35d stratified rmse across DA freq
-kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon==35] ~ 
-               as.factor(kw_horizons$model_id[kw_horizons$phen=="Stratified" & kw_horizons$horizon==35]))
-dunn_strat_35d <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon==35] ~ 
-                             as.factor(kw_horizons$model_id[kw_horizons$phen=="Stratified" & kw_horizons$horizon==35]))
-rslt_strat_35d=toupper(cldList(P.adj ~ Comparison, data=dunn_strat_35d$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-median_strat_35d_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon ==35 & kw_horizons$model_id=="Daily"])
-median_strat_35d_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon ==35 & kw_horizons$model_id=="Weekly"])
-median_strat_35d_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon ==35 & kw_horizons$model_id=="Fortnightly"])
-median_strat_35d_monthly <- median(kw_horizons$RMSE[kw_horizons$phen=="Stratified" & kw_horizons$horizon ==35 & kw_horizons$model_id=="Monthly"])
-
-#kruskal wallis and dunn tests for 1d mixed rmse across DA freq
-kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon==1] ~ 
-               as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$horizon==1]))
-dunn_mix_1d <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon==1] ~ 
-                          as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$horizon==1]))
-rslt_mix_1d=toupper(cldList(P.adj ~ Comparison, data=dunn_mix_1d$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-rslt_mix_1d <- c("a","ab","bc","c")
-median_mix_1d_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==1 & kw_horizons$model_id=="Daily"])
-median_mix_1d_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==1 & kw_horizons$model_id=="Weekly"])
-median_mix_1d_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==1 & kw_horizons$model_id=="Fortnightly"])
-median_mix_1d_monthly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==1 & kw_horizons$model_id=="Monthly"])
-
-#kruskal wallis and dunn tests for 7d mixed rmse across DA freq
-kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon==7] ~ 
-               as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$horizon==7]))
-dunn_mix_7d <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon==7] ~ 
-                          as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$horizon==7]))
-rslt_mix_7d=toupper(cldList(P.adj ~ Comparison, data=dunn_mix_7d$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-rslt_mix_7d <- c("bc","a","ab","c")
-median_mix_7d_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==7 & kw_horizons$model_id=="Daily"])
-median_mix_7d_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==7 & kw_horizons$model_id=="Weekly"])
-median_mix_7d_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==7 & kw_horizons$model_id=="Fortnightly"])
-median_mix_7d_monthly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==7 & kw_horizons$model_id=="Monthly"])
-
-#kruskal wallis and dunn tests for 35d mixed rmse across DA freq
-kruskal.test(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon==35] ~ 
-               as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$horizon==35]))
-dunn_mix_35d <- dunnTest(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon==35] ~ 
-                           as.factor(kw_horizons$model_id[kw_horizons$phen=="Mixed" & kw_horizons$horizon==35]))
-rslt_mix_35d=toupper(cldList(P.adj ~ Comparison, data=dunn_mix_35d$res, threshold = 0.05)$Letter[c(1,4,2,3)])
-rslt_mix_35d <- c("c","a","b","b")
-median_mix_35d_daily <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==35 & kw_horizons$model_id=="Daily"])
-median_mix_35d_weekly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==35 & kw_horizons$model_id=="Weekly"])
-median_mix_35d_fortnightly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==35 & kw_horizons$model_id=="Fortnightly"])
-median_mix_35d_monthly <- median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$horizon ==35 & kw_horizons$model_id=="Monthly"])
-
-#create table to export mixed and stratified p-vals across depths (aggregated over horizon)
-pvals_horizon_aggregated <- data.frame("Depth_m"= c(rep(1,6),rep(5,6),rep(9,6)), 
-                                       "Comparison" = c(dunn_mix_1m$res$Comparison,dunn_mix_5m$res$Comparison,dunn_mix_9m$res$Comparison),
-                                       #"Z" = c(dunn_mix_1m$res$Z,dunn_mix_5m$res$Z,dunn_mix_9m$res$Z),
-                                       "Mixed_pvalue" = c(dunn_mix_1m$res$P.adj,dunn_mix_5m$res$P.adj,dunn_mix_9m$res$P.adj),
-                                       "Stratified_pvalue" = c(dunn_strat_1m$res$P.adj,dunn_strat_5m$res$P.adj,dunn_strat_9m$res$P.adj))
-
-#write.csv(pvals_horizon_aggregated,file.path(lake_directory,"analysis/data/UC_pvals_horizon_aggregatred.csv"),row.names = FALSE)
-
-
-#median RMSE table for depths
-median_RMSE_depth <- data.frame("Depth_m" = c(rep(1,8),rep(5,8),rep(9,8)),
-                                "model_id" = rep(c("Daily","Weekly","Fortnightly","Monthly"),6),
-                                "TempDynamics" = rep(c(rep("Mixed",4),rep("Stratified",4)),3),
-                                "RMSE_C" = c(median_mix_1m_daily,median_mix_1m_weekly,median_mix_1m_fortnightly,median_mix_1m_monthly,
-                                             median_strat_1m_daily,median_strat_1m_weekly,median_strat_1m_fortnightly,median_strat_1m_monthly,
-                                             median_mix_5m_daily,median_mix_5m_weekly,median_mix_5m_fortnightly,median_mix_5m_monthly,
-                                             median_strat_5m_daily,median_strat_5m_weekly,median_strat_5m_fortnightly,median_strat_5m_monthly,
-                                             median_mix_9m_daily,median_mix_9m_weekly,median_mix_9m_fortnightly,median_mix_9m_monthly,
-                                             median_strat_9m_daily,median_strat_9m_weekly,median_strat_9m_fortnightly,median_strat_9m_monthly))
-#write.csv(median_RMSE_depth,file.path(lake_directory,"analysis/data/UC_median_RMSE_depths_DA.csv"),row.names = FALSE)
-
-#add binned RMSE for new fig 
-median_RMSE_depth$RMSE_bins <- ifelse(median_RMSE_depth$RMSE_C < 1, 1, # < 1
-                                      ifelse(median_RMSE_depth$RMSE_C >= 1 & median_RMSE_depth$RMSE_C < 1.5, 1.5, # 1 - 1.5
-                                             ifelse(median_RMSE_depth$RMSE_C >= 1.5 & median_RMSE_depth$RMSE_C < 2, 2, # 1.5 - 2
-                                                    ifelse(median_RMSE_depth$RMSE_C >= 2 & median_RMSE_depth$RMSE_C < 2.5, 2.5, # 2 - 2.5
-                                                           ifelse(median_RMSE_depth$RMSE_C >= 2.5, 3, 0))))) # 2.5 - 3 
-
-#median RMSE table for horizons
-median_RMSE_horizon <- data.frame("Horizon_days" = c(rep(1,8),rep(7,8),rep(35,8)),
-                                  "model_id" = rep(c("Daily","Weekly","Fortnightly","Monthly"),6),
-                                  "TempDynamics" = rep(c(rep("Mixed",4),rep("Stratified",4)),3),
-                                  "RMSE_C" = c(median_mix_1d_daily,median_mix_1d_weekly,median_mix_1d_fortnightly,median_mix_1d_monthly,
-                                               median_strat_1d_daily,median_strat_1d_weekly,median_strat_1d_fortnightly,median_strat_1d_monthly,
-                                               median_mix_7d_daily,median_mix_7d_weekly,median_mix_7d_fortnightly,median_mix_7d_monthly,
-                                               median_strat_7d_daily,median_strat_7d_weekly,median_strat_7d_fortnightly,median_strat_7d_monthly,
-                                               median_mix_35d_daily,median_mix_35d_weekly,median_mix_35d_fortnightly,median_mix_35d_monthly,
-                                               median_strat_35d_daily,median_strat_35d_weekly,median_strat_35d_fortnightly,median_strat_35d_monthly))
-#write.csv(median_RMSE_horizon,file.path(lake_directory,"analysis/data/UC_median_RMSE_horizon_DA.csv"),row.names = FALSE)
-
-#add binned RMSE for new fig 
-median_RMSE_horizon$RMSE_bins <- ifelse(median_RMSE_horizon$RMSE_C < 0.5, 0.5, # < 0.5 
-                                        ifelse(median_RMSE_horizon$RMSE_C >= 0.5 & median_RMSE_horizon$RMSE_C < 1.0, 1, # 0.5 - 1 
-                                               ifelse(median_RMSE_horizon$RMSE_C >= 1 & median_RMSE_horizon$RMSE_C < 1.5, 1.5, # 1 - 1.5
-                                                      ifelse(median_RMSE_horizon$RMSE_C >= 1.5 & median_RMSE_horizon$RMSE_C < 2, 2, # 1.5 - 2
-                                                             ifelse(median_RMSE_horizon$RMSE_C >= 2 & median_RMSE_horizon$RMSE_C < 2.5, 2.5, # 2 - 2.5
-                                                                    ifelse(median_RMSE_horizon$RMSE_C >= 2.5, 3, 0)))))) # 2.5 - 3 
-
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$TempDynamics=="Mixed"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$TempDynamics=="Stratified"])
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==7])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35])
-
-mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==1])
-mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==5])
-mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==9])
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Mixed"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Mixed"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Mixed"])
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Stratified"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Stratified"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Stratified"])
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Mixed"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==7 & median_RMSE_horizon$TempDynamics=="Mixed"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Mixed"])
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Mixed"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Mixed"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Mixed"])
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Mixed"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Mixed"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Mixed"])
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Stratified"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Stratified"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Stratified"])
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==7 & median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Stratified"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==7 & median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Stratified"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==7 & median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Stratified"])
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Stratified"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Stratified"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Stratified"])
-
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Stratified"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==7 & median_RMSE_horizon$TempDynamics=="Stratified"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Stratified"])
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Daily"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Weekly"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Fortnightly"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Monthly"])
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Daily"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Weekly"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Fortnightly"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Monthly"])
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Daily"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Weekly"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Fortnightly"])
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Stratified" & median_RMSE_horizon$model_id=="Monthly"])
-
-
-#calculate 1 and 35 day RMSE for mixed vs. stratified
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Mixed"]) 
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Mixed"]) 
-
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Stratified"]) 
-mean(median_RMSE_horizon$RMSE_C[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Stratified"])
-
-
-#mixed vs stratified rmse across depths
-mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==1 & median_RMSE_depth$TempDynamics=="Mixed"])
-mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==1 & median_RMSE_depth$TempDynamics=="Stratified"]) 
-
-mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==5 & median_RMSE_depth$TempDynamics=="Mixed"])
-mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==5 & median_RMSE_depth$TempDynamics=="Stratified"]) 
-
-mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==9 & median_RMSE_depth$TempDynamics=="Mixed"])
-mean(median_RMSE_depth$RMSE_C[median_RMSE_depth$Depth_m==9 & median_RMSE_depth$TempDynamics=="Stratified"]) 
-
-
-#create table to export mixed and stratified p-vals comparing horizons for each depth and DA freq
-pvals <- data.frame("Depth_m"= c(rep(1,12),rep(5,12),rep(9,12)), 
-                    "DA" = rep(c(rep("daily",3),rep("weekly",3),rep("fortnightly",3),rep("monthly",3)),3),
-                    "Comparison" = rep(c(dunn_mix_daily_1m$res$Comparison),12),
-                    # "Z" = c(dunn_mix_daily_1m$res$Z,dunn_mix_weekly_1m$res$Z,dunn_mix_fortnightly_1m$res$Z,dunn_mix_monthly_1m$res$Z,
-                    #         dunn_mix_daily_5m$res$Z,dunn_mix_weekly_5m$res$Z,dunn_mix_fortnightly_5m$res$Z,dunn_mix_monthly_5m$res$Z,
-                    #         dunn_mix_daily_9m$res$Z,dunn_mix_weekly_9m$res$Z,dunn_mix_fortnightly_9m$res$Z,dunn_mix_monthly_9m$res$Z),
-                    "Mixed_pvalue" = c(dunn_mix_daily_1m$res$P.adj,dunn_mix_weekly_1m$res$P.adj,dunn_mix_fortnightly_1m$res$P.adj,dunn_mix_monthly_1m$res$P.adj,
-                                       dunn_mix_daily_5m$res$P.adj,dunn_mix_weekly_5m$res$P.adj,dunn_mix_fortnightly_5m$res$P.adj,dunn_mix_monthly_5m$res$P.adj,
-                                       dunn_mix_daily_9m$res$P.adj,dunn_mix_weekly_9m$res$P.adj,dunn_mix_fortnightly_9m$res$P.adj,dunn_mix_monthly_9m$res$P.adj),
-                    "Stratified_pvalue" = c(dunn_strat_daily_1m$res$P.adj,dunn_strat_weekly_1m$res$P.adj,dunn_strat_fortnightly_1m$res$P.adj,dunn_strat_monthly_1m$res$P.adj,
-                                            dunn_strat_daily_5m$res$P.adj,dunn_strat_weekly_5m$res$P.adj,dunn_strat_fortnightly_5m$res$P.adj,dunn_strat_monthly_5m$res$P.adj,
-                                            dunn_strat_daily_9m$res$P.adj,dunn_strat_weekly_9m$res$P.adj,dunn_strat_fortnightly_9m$res$P.adj,dunn_strat_monthly_9m$res$P.adj))
-#write.csv(pvals,file.path(lake_directory,"analysis/data/UC_pvals_horizon.csv"),row.names = FALSE)
-
-#create table to export mixed and stratified p-vals comparing depths for each horizon and DA freq
-pvals_depths <- data.frame("Horizon_days"= c(rep(1,12),rep(7,12),rep(35,12)), 
-                           "DA" = rep(c(rep("daily",3),rep("weekly",3),rep("fortnightly",3),rep("monthly",3)),3),
-                           "Comparison" = rep(c(dunn_mix_daily_1day$res$Comparison),12),
-                           "Mixed_pvalue" = c(dunn_mix_daily_1day$res$P.adj,dunn_mix_weekly_1day$res$P.adj,dunn_mix_fortnightly_1day$res$P.adj,dunn_mix_monthly_1day$res$P.adj,
-                                              dunn_mix_daily_7day$res$P.adj,dunn_mix_weekly_7day$res$P.adj,dunn_mix_fortnightly_7day$res$P.adj,dunn_mix_monthly_7day$res$P.adj,
-                                              dunn_mix_daily_35day$res$P.adj,dunn_mix_weekly_35day$res$P.adj,dunn_mix_fortnightly_35day$res$P.adj,dunn_mix_monthly_35day$res$P.adj),
-                           "Stratified_pvalue" = c(dunn_strat_daily_1day$res$P.adj,dunn_strat_weekly_1day$res$P.adj,dunn_strat_fortnightly_1day$res$P.adj,dunn_strat_monthly_1day$res$P.adj,
-                                                   dunn_strat_daily_7day$res$P.adj,dunn_strat_weekly_7day$res$P.adj,dunn_strat_fortnightly_7day$res$P.adj,dunn_strat_monthly_7day$res$P.adj,
-                                                   dunn_strat_daily_35day$res$P.adj,dunn_strat_weekly_35day$res$P.adj,dunn_strat_fortnightly_35day$res$P.adj,dunn_strat_monthly_35day$res$P.adj))
-#write.csv(pvals_depths,file.path(lake_directory,"analysis/data/UC_pvals_depth.csv"),row.names = FALSE)
-
-
-#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#### FIGURE 5: 1,5,9m depth facets for each DA frequency for 1,7,and 35-day ahead forecasts  ####
-
-letters <- data.frame("depth"= c(rep(1,8),rep(5,8),rep(9,8)),
-                      "horizon" = rep(c(1,7,35),8),
-                      "model_id" = rep(c("Daily","Weekly","Fortnightly","Monthly"),6),
-                      "x" = rep(c(1,2,3,4),6),
-                      "phen" = rep(c(rep("Mixed",4),rep("Stratified",4)),3),
-                      "letter" = tolower(c(rslt_mix_1m, rslt_strat_1m, rslt_mix_5m, rslt_strat_5m,
-                                           rslt_mix_9m,rslt_strat_9m)),
-                      "max.RMSE" = c(rep(2,16),rep(2,8)))
-
-#rename depth facets
-depths <- c("1m","5m","9m")
-names(depths) <- c("1","5","9")
-
-#order factor levels
-kw_horizons$model_id <- factor(kw_horizons$model_id, levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
-
-ggplot(subset(kw_horizons, horizon %in% c(1,7,35) & depth %in% c(1,5,9)), 
-       aes(model_id, RMSE, fill=as.factor(horizon))) +  ylab("RMSE") + xlab("")+
-  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="Horizon")) +
-  geom_hline(yintercept=2, linetype='dashed', col = 'black', size=0.3)+ 
-  scale_fill_manual(values=c("#81A665","#E0CB48","#D08151"),labels = c("1day", "7day", "35day")) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.31),
-        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
-        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-        legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
-  geom_text(data=letters,aes(x=model_id,y=0.2+max.RMSE,label=letter),hjust=0.1,vjust = -0.1, size=2.5) +
-  facet_grid(depth~phen, scales="free_y",labeller = labeller(depth = depths)) 
-ggsave(file.path(lake_directory,"analysis/figures/UC_RMSEvsDAfreq_depth_facets_fig5.jpg"),width=3.5, height=4)
-
-
-#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#### FIGURE 6: mixed and stratified RMSE tileplots aggregated across all depths  ####
-
-#round rmse to nearest 0.5 for tile plot below
-forecast_horizon_avg$RMSE_bins <- plyr::round_any(forecast_horizon_avg$RMSE,0.5) 
-
-#figure for horizon vs frequency to compare forecast skill
-ggplot(forecast_horizon_avg, aes(model_id, horizon, fill=RMSE_bins)) + 
-  ylab("Horizon (days)") + theme_bw() + facet_wrap(~phen) + geom_tile(width=0.8) + xlab("") +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), panel.spacing=unit(0, "cm"),
-        panel.grid.major = element_blank(),panel.grid.minor = element_blank())+
-  guides(fill=guide_legend(title="RMSE")) +  scale_fill_gradientn(colors = hcl.colors(4, "BuPu")) 
-ggsave(file.path(lake_directory,"analysis/figures/UC_HorizonvsDA_tileplot_fig6.jpg"),width=4, height=3.5)
-
-#median mixed vs stratified period rmse across different horizons
-median(forecast_horizon_avg$RMSE_bins[forecast_horizon_avg$phen=="Mixed" & forecast_horizon_avg$horizon==9 & forecast_horizon_avg$model_id=="Fortnightly"])
-median(forecast_horizon_avg$RMSE_bins[forecast_horizon_avg$phen=="Stratified" & forecast_horizon_avg$horizon==1 & forecast_horizon_avg$model_id=="Fortnightly"])
-
-#------------------------------------------------------------------------------------------------#
-# Data assimilation figure 4
-DA <- all_DA_forecasts
-
-#pull out 2 horizons for fig 4 (mixed vs stratified)
-DA_sub <- DA[(DA$datetime >="2021-01-01" & DA$datetime <="2021-01-31") | (DA$datetime >="2021-06-24" & DA$datetime <="2021-07-25"),]
-
-#summary df to average the forecasts for each DA freq, horizon, depth, and date
-DA_sub_final <- plyr::ddply(DA_sub, c("depth", "datetime","horizon", "model_id"), function(x) {
-  data.frame(
-    forecast_mean = mean(x$mean, na.rm = TRUE),
-    forecast_sd = mean(x$sd, na.rm = TRUE),
-    forecast_upper_95 = mean(x$quantile97.5, na.rm=TRUE),
-    forecast_lower_95 = mean(x$quantile02.5, na.rm=TRUE),
-    observed = mean(x$observation, na.rm=TRUE)
-  )
-}, .progress = plyr::progress_text(), .parallel = FALSE) 
-
-#change datetime format
-DA_sub_final$datetime <- as.Date(DA_sub_final$datetime)
-
-#add in phen column
-DA_sub_final$phen <- "Stratified" 
-DA_sub_final$phen[DA_sub_final$datetime >="2021-01-01" & DA_sub_final$date <="2021-01-31"] <- "Mixed"
-
-#change DA factor order
-DA_sub_final$model_id <- factor(DA_sub_final$model_id, levels = c("Daily", "Weekly","Fortnightly","Monthly"))
-
-#change order of DA frequencies so daily is plotted on top
-DA_sub_final$model_id <- factor(DA_sub_final$model_id, levels=rev(levels(DA_sub_final$model_id)))
-
-ggplot(subset(DA_sub_final, horizon==1 & depth %in% c(1,5,9)), aes(datetime, forecast_mean, color=model_id)) + 
-  geom_ribbon(aes(x=datetime, y = forecast_mean, ymin = forecast_mean-forecast_sd, ymax = forecast_mean+forecast_sd, 
-                  color=model_id, fill=model_id),alpha=0.4)  + theme_bw() + 
-  #geom_line(aes(datetime, forecast_mean), size=0.2, data = . %>% filter(model_id %in% c("Daily"))) +
-  geom_point(aes(x=datetime, y=observed), col="black", size=0.3) +  
-  facet_wrap(depth~phen, scales = "free", labeller = labeller(depth=depths,.multi_line = FALSE),ncol = 2) + scale_x_date() +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.76,0.985),
-        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(), legend.key=element_rect(fill=NA),
-        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-        legend.title = element_text(size = 4.5),legend.text  = element_text(size = 4.5), panel.spacing=unit(0, "cm"),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
-  ylab(expression("Temperature ("*~degree*C*")")) + xlab("")  + scale_color_manual(values=rev(cb_friendly_2)) + scale_fill_manual(values=rev(cb_friendly_2)) +
-  guides(fill = guide_legend(title="", override.aes = list(alpha=1),reverse = TRUE), color="none")
-ggsave(file.path(lake_directory,"analysis/figures/UC_AssimilationVSdatafreq_fig4.jpg"), width=3.5, height=4) 
-
-#uncertainty range across depths and mixed vs stratified periods
-((mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Monthly"]) -
-    mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Monthly"])) -
-    
-    (mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Daily"]) -
-       mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Daily"]))) /
-  
-  mean((mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Monthly"]) -
-          mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Monthly"])),
-       (mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Daily"]) -
-          mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Daily"]))) *100
-
-
-((mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Monthly"]) -
-    mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Monthly"])) -
-    
-    (mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Daily"]) -
-       mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Daily"]))) / 
-  
-  mean((mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Monthly"]) -
-          mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Monthly"])),
-       (mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Daily"]) -
-          mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Daily"]))) *100
-
-#-------------------------------------------------------------------------------#
-# Fig 7 - fig to compare forecast skill across horizons and depths 
-
-#test normality √ (but variances are not homogenous so stick w/ KW)
-ggpubr::ggqqplot(kw_horizons$RMSE)
-
-#create new df with all letters 
-DA_horizon_letters <- data.frame("Horizon" = rep(c(rep(1,4),rep(7,4), rep(35,4)),2),
-                                 "TempDynamics" = c(rep("Mixed",12),rep("Stratified",12)),
-                                 "model_id" = c(rep(c("Daily","Weekly","Fortnightly","Monthly"),6)),
-                                 "RMAE" = tolower(c(rslt_mix_1d,rslt_mix_7d,rslt_mix_35d,
-                                                    rslt_strat_1d,rslt_strat_7d,rslt_strat_35d)))
-
-DA_depth_letters <- data.frame("Depth" = rep(c(rep(1,4),rep(5,4), rep(9,4)),2),
-                               "TempDynamics" = c(rep("Mixed",12),rep("Stratified",12)),
-                               "model_id" = c(rep(c("Daily","Weekly","Fortnightly","Monthly"),6)),
-                               "letter" = tolower(c(rslt_mix_1m,rslt_mix_5m,rslt_mix_9m,
-                                                    rslt_strat_1m,rslt_strat_5m,rslt_strat_9m)))
-
-
-
-#change factor order
-median_RMSE_horizon$model_id <- factor(median_RMSE_horizon$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
-median_RMSE_depth$model_id <- factor(median_RMSE_depth$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
-
-#change horizon order
-median_RMSE_horizon$Horizon_days <- factor(median_RMSE_horizon$Horizon_days, levels=c(1,7,35))
-median_RMSE_depth$Depth_m <- factor(median_RMSE_depth$Depth_m, levels=c(9,5,1))
-
-#now make a figure... 
-horiz <- ggplot(median_RMSE_horizon, aes(model_id, as.factor(Horizon_days), fill=as.factor(RMSE_bins))) + 
-  ylab("Horizon (days)") + xlab("") + theme_bw() + geom_tile(width=0.8) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
-        legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
-        plot.margin = unit(c(0,0.05,0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-        legend.title = element_text(size = 6),legend.text  = element_text(size = 8), panel.spacing=unit(0, "cm"), legend.margin=margin(0,0,0,0),
-        axis.text.x=element_blank(), axis.ticks.x=element_blank(), axis.text.y = element_text(size=6)) +
-  facet_grid(~TempDynamics, scales="free_y",labeller = labeller(Depth_m = depths)) +
-  guides(fill=guide_legend(title=expression(paste("RMSE (",degree,"C)")))) + scale_fill_brewer(type="seq", 
-                                                                                               palette=7, direction = -1, labels = c("< 0.5", "0.5 - 1", "1 - 1.5", "1.5 - 2", "2 - 2.5", "> 2.5"))
-
-depth <- ggplot(median_RMSE_depth, aes(model_id, as.factor(Depth_m), fill=as.factor(RMSE_bins))) + 
-  ylab("Depth (m)") + xlab("") + theme_bw() + geom_tile(width=0.8) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
-        legend.background = element_blank(),legend.direction = "vertical", panel.grid.minor = element_blank(),
-        plot.margin = unit(c(-0.6,0.05,-0.2,0.1), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-        legend.title = element_text(size = 6),legend.text  = element_text(size = 8), panel.spacing=unit(0, "cm"), legend.margin=margin(0,0,0,0),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
-  facet_grid(~TempDynamics, scales="free_y",labeller = labeller(Depth_m = depths)) +
-  guides(fill=guide_legend(title=expression(paste("RMSE (",degree,"C)")))) + scale_fill_manual( 
-    values = c("#E6550D","#FD8D3C","#FDAE6B","#FDD0A2","#FEEDDE"), labels = c(
-      "0.5 - 1", "1 - 1.5", "1.5 - 2", "2 - 2.5", "> 2.5"))
-
-#combine depth and horizon plots
-ggarrange(horiz, depth, 
-          ncol = 1, nrow = 2,
-          common.legend = TRUE,
-          legend="right")
-
-
-#ggsave(file.path(lake_directory,"analysis/figures/UC_posthoc_letters_horizon_depth_facets_fig7.jpg"),width=3.5, height=4)
-
-#------------------------------------------------------------------------------------------------#
-#parameter evolution figs 
 #read in all forecasts 
 params_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/IC_off"))
 params <- arrow::open_dataset(score_dir) |> collect() |>   
@@ -635,7 +140,7 @@ UC_param_evol <- ggplot(subset(params,horizon %in% c(1)), aes(datetime, mean, co
                       scale_color_manual(values=cb_friendly_2) +
                       scale_fill_manual(values=cb_friendly_2) +
                       facet_wrap(~variable, scales="free_y",ncol=1) + ylab("parameter")+ xlab("")+
-                      scale_x_date(date_labels = "%b") + #ylab(expression("Temperature ("*~degree*C*")")) 
+                      scale_x_date(date_labels = "%b") + #ylab(expression("Temperature ("*degree*C*")")) 
                       geom_ribbon(aes(y = mean, ymin = mean-sd, ymax = mean+sd, color=model_id, fill=model_id), alpha=0.5) +
                       guides(fill = guide_legend(title="DA frequency", override.aes = list(alpha=1)), color="none")
 
@@ -711,7 +216,7 @@ all_DA_forecasts_yesIC <- all_DA_forecasts_yesIC[all_DA_forecasts_yesIC$datetime
 #------------------------------------------------------------------------------#
 #calculate forecast skill metrics
 
-#forecast skill for each depth and horizon
+#forecast skill for each depth and horizon 
 forecast_skill_depth_horizon_yesIC <-  plyr::ddply(all_DA_forecasts_yesIC, c("depth","horizon","phen", "model_id"), function(x) {
   data.frame(
     RMSE = sqrt(mean((x$mean - x$observation)^2, na.rm = TRUE)),
@@ -775,61 +280,48 @@ UC_depth <- rbind(forecast_depth_avg_yesIC,forecast_depth_avg)
 UC$depth <- ceiling(UC$depth)
 UC_depth$depth <- ceiling(UC_depth$depth)
 
-IC <- ggplot(subset(UC_depth, depth %in% c(1,5,9)), aes(model_id, RMSE, fill=as.factor(IC))) +  
-  ylab(expression("RMSE ("*~degree*C*")")) + xlab("")+
-  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="IC")) + geom_hline(yintercept=2,linetype="dashed") +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
-        legend.background = element_blank(), panel.grid.minor = element_blank(), legend.box.margin=margin(-10,-1,-10,-10),
-        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-        legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
-  facet_grid(depth~phen,labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
+#rename depth facets
+depths <- c("1m","5m","9m")
+names(depths) <- c("1","5","9")
 
-tag_facet2(IC, fontface = 1, hjust=0, size=3, tag_pool = c("a","b","c","d","e","f"))
-ggsave(file.path(lake_directory,"analysis/figures/UC_RMSEvsDAfreq_depth_facets_IC_allhorizons.jpg"),width=3.5, height=4)
+IC_off_rmse <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9) & horizon > 0) ,
+                     aes(horizon, RMSE, color=as.factor(model_id), aes=as.factor(IC))) +  
+                ylab(expression("RMSE ("*degree*C*")")) + xlab("Horizon (days)")+
+                geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + 
+                geom_hline(yintercept = 2, linetype="dotted") + ylim(0,3.2) +
+                theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), 
+                      legend.position = "right", legend.background = element_blank(),
+                      panel.grid.minor = element_blank(), legend.key.size = unit(0.5, "lines"), 
+                      panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
+                      legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), 
+                      legend.title = element_text(size=6), axis.text.x = element_text(vjust = 0.5,size=6), 
+                      axis.text.y = element_text(size=6)) + #geom_point() +
+                facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + 
+                scale_color_manual(values=cb_friendly_2)  
 
-IC_var <- ggplot(subset(UC, depth %in% c(1,5,9) & horizon==1), aes(model_id, sd, fill=as.factor(IC))) +  ylab("sd") + xlab("")+
-  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="")) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
-        legend.background = element_blank(), panel.grid.minor = element_blank(), legend.box.margin=margin(-10,-1,-10,-10),
-        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-        legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
-  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
-
-tag_facet2(IC_var, fontface = 1, hjust=0, size=3, tag_pool = c("a","b","c","d","e","f"))
-ggsave(file.path(lake_directory,"analysis/figures/UC_SDevvsDAfreq_depth_facets_IC_1day.jpg"),width=3.5, height=4)
+tag_facet2(IC_off_rmse, fontface = 1, hjust=0, size=3, tag_pool = c("a","b","c","d","e","f"))
+ggsave(file.path(lake_directory,"analysis/figures/UC_RMSEvsDAfreq_depth_facets_IC_off.jpg"),width=3.5, height=4)
 
 
-fig8 <- ggplot(subset(UC_depth, depth %in% c(1,5,9)) ,aes(model_id, variance, fill=as.factor(IC))) +  ylab("variance") + xlab("")+
-  geom_bar(stat="identity",position="dodge") + theme_bw() + guides(fill=guide_legend(title="IC")) + 
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "right",
-        legend.background = element_blank(), panel.grid.minor = element_blank(), legend.box.margin=margin(-10,-1,-10,-10),
-        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-        legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
-  facet_grid(depth~phen,labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48")) 
+IC_off_var <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9) & horizon > 0) ,
+                      aes(horizon, variance, color=as.factor(model_id), aes=as.factor(IC))) +  
+                ylab("Variance") + xlab("Horizon (days)")+ ylim(0,6.5) +
+                geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + 
+                theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), 
+                      legend.position = "right", legend.background = element_blank(),
+                      panel.grid.minor = element_blank(), legend.key.size = unit(0.5, "lines"), 
+                      panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
+                      legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), 
+                      legend.title = element_text(size=6), axis.text.x = element_text(vjust = 0.5,size=6), 
+                      axis.text.y = element_text(size=6)) + #geom_point() +
+                facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + 
+                scale_color_manual(values=cb_friendly_2)  
 
-tag_facet2(fig8, fontface = 1, size=3, tag_pool = c("a","b","c","d","e","f"))  
-ggsave(file.path(lake_directory,"analysis/figures/UC_variancevsDAfreq_depth_facets_IC.jpg"),width=3.5, height=4)
-
-mean(UC_depth$variance[UC_depth$phen=="Mixed" & UC_depth$IC=="yes IC"])
-mean(UC_depth$variance[UC_depth$phen=="Mixed" & UC_depth$IC=="no IC"])
-
-sd(UC_depth$variance[UC_depth$phen=="Mixed" & UC_depth$IC=="yes IC"])
-sd(UC_depth$variance[UC_depth$phen=="Mixed" & UC_depth$IC=="no IC"])
-
-mean(UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="yes IC" & UC_depth$depth==1])
-mean(UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="no IC"& UC_depth$depth==1])
-
-UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="yes IC" & UC_depth$depth==5 & UC_depth$model_id=="Monthly"]
-UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="no IC"& UC_depth$depth==5 & UC_depth$model_id=="Monthly"]
-
-UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="yes IC" & UC_depth$depth==9 & UC_depth$model_id=="Monthly"]
-UC_depth$variance[UC_depth$phen=="Stratified" & UC_depth$IC=="no IC"& UC_depth$depth==9 & UC_depth$model_id=="Monthly"]
+tag_facet2(IC_off_var, fontface = 1, size=3, tag_pool = c("a","b","c","d","e","f"))  
+ggsave(file.path(lake_directory,"analysis/figures/UC_variancevsDAfreq_depth_facets_IC_off.jpg"),width=3.5, height=4)
 
 #-------------------------------------------------------------------------------#
-#NEW FIGURE - proportion of IC uncertainty vs horizon
+#FIGURE 9 - proportion of IC uncertainty vs horizon
 
 #new dataframe to calculate the proportion of IC uncertainty across depths, horizons, model_id, and phen
 UC_prop <- data.frame("depth" = forecast_skill_depth_horizon_yesIC$depth, 
@@ -844,7 +336,7 @@ UC_prop$prop_var <- ((forecast_skill_depth_horizon_yesIC$variance -
                        forecast_skill_depth_horizon_yesIC$variance)
 
 
-fig9 <- ggplot(subset(UC_prop, depth %in% c(1,5,9)) ,
+fig9 <- ggplot(subset(UC_prop, depth %in% c(1,5,9) & horizon > 0) ,
                aes(horizon, prop_var, color=as.factor(model_id))) +  
   ylab("Proportion of IC uncertainty") + 
   geom_line() + theme_bw() +# geom_point() +
@@ -863,7 +355,7 @@ fig9 <- ggplot(subset(UC_prop, depth %in% c(1,5,9)) ,
         axis.text.x = element_text(vjust = 0.5,size=6), 
         axis.text.y = element_text(size=6)) + 
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + 
-  scale_color_manual(values=cb_friendly_2) 
+  scale_color_manual(values=cb_friendly_2) #+geom_point
 
 tag_facet2(fig9, fontface = 1, size=3, tag_pool = c("a","b","c","d","e","f"))  
 ggsave(file.path(lake_directory,"analysis/figures/UC_prop_ICdvshorizon_depth_facets_var.jpg"),width=3.5, height=4)

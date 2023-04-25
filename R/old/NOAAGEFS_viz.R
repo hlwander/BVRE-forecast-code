@@ -1,7 +1,7 @@
 pacman::p_load(tidyverse)
 
-noaa_date <- as.character(lubridate::as_date("2021-10-11"))
-s3 <- arrow::s3_bucket(bucket = "drivers/noaa/gefs-v12/stage2/parquet/0", endpoint_override = "s3.flare-forecast.org", anonymous = TRUE)
+noaa_date <- as.character(lubridate::as_date("2021-05-29"))
+s3 <- arrow::s3_bucket(bucket = "drivers/noaa/gefs-v12-reprocess/stage2/parquet/0", endpoint_override = "s3.flare-forecast.org", anonymous = TRUE)
 noaa_df <- arrow::open_dataset(s3, partitioning = "reference_date") |> 
   filter(variable == "air_temperature",
          reference_date == noaa_date,
@@ -15,7 +15,7 @@ noaa_df |> ggplot(aes(x = datetime, y = prediction, group = parameter)) +
   labs(y = "NOAA GEFS air temperature") +
   theme_bw()
 
-#calculate vairance for each day
+#calculate variance for each day
 
 test <- plyr::ddply(noaa_df, c("parameter","datetime"), function(x) {
 data.frame(
@@ -37,3 +37,4 @@ variance_df |> ggplot(aes(x = datetime, y = variance)) +
   geom_line() +
   labs(y = "NOAA GEFS variance") +
   theme_bw()
+
