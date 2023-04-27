@@ -22,50 +22,50 @@ setwd(lake_directory)
 
 #read in all forecasts 
 score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/IC_off"))
-all_DA_forecasts <- arrow::open_dataset(score_dir) |> collect() |>   
+all_DA_forecasts_noIC <- arrow::open_dataset(score_dir) |> collect() |>   
   filter(!is.na(observation), variable == "temperature",horizon > 0.3) 
 
 
 #need to round horizon because they are in decimal form for all Jan 1 ref date
-all_DA_forecasts$horizon <- floor(all_DA_forecasts$horizon)
+all_DA_forecasts_noIC$horizon <- floor(all_DA_forecasts_noIC$horizon)
 
 #round depths up to nearest m 
 #all_DA_forecasts$depth <- ceiling(all_DA_forecasts$depth)
 
 #add a group number so that I can average horizons later on
-all_DA_forecasts <- all_DA_forecasts %>% 
-  mutate(group = case_when(all_DA_forecasts$horizon <= 5 ~ "1-5",
-                           all_DA_forecasts$horizon <=10 & all_DA_forecasts$horizon > 5 ~ "6-10",
-                           all_DA_forecasts$horizon <=15 & all_DA_forecasts$horizon > 10 ~ "11-15",
-                           all_DA_forecasts$horizon <=20 & all_DA_forecasts$horizon > 15 ~ "16-20",
-                           all_DA_forecasts$horizon <=25 & all_DA_forecasts$horizon > 20 ~ "21-25",
-                           all_DA_forecasts$horizon <=30 & all_DA_forecasts$horizon > 25 ~ "26-30",
-                           all_DA_forecasts$horizon <=35 & all_DA_forecasts$horizon > 30 ~ "31-35"))
+all_DA_forecasts_noIC <- all_DA_forecasts_noIC %>% 
+  mutate(group = case_when(all_DA_forecasts_noIC$horizon <= 5 ~ "1-5",
+                           all_DA_forecasts_noIC$horizon <=10 & all_DA_forecasts_noIC$horizon > 5 ~ "6-10",
+                           all_DA_forecasts_noIC$horizon <=15 & all_DA_forecasts_noIC$horizon > 10 ~ "11-15",
+                           all_DA_forecasts_noIC$horizon <=20 & all_DA_forecasts_noIC$horizon > 15 ~ "16-20",
+                           all_DA_forecasts_noIC$horizon <=25 & all_DA_forecasts_noIC$horizon > 20 ~ "21-25",
+                           all_DA_forecasts_noIC$horizon <=30 & all_DA_forecasts_noIC$horizon > 25 ~ "26-30",
+                           all_DA_forecasts_noIC$horizon <=35 & all_DA_forecasts_noIC$horizon > 30 ~ "31-35"))
 
 strat_date<- "2021-11-07"
 
 #add stratified vs mixed col
-all_DA_forecasts$phen <- ifelse(all_DA_forecasts$datetime <= as.POSIXct(strat_date) & 
-                                  all_DA_forecasts$datetime >="2021-03-12","Stratified", "Mixed")
+all_DA_forecasts_noIC$phen <- ifelse(all_DA_forecasts_noIC$datetime <= as.POSIXct(strat_date) & 
+                                       all_DA_forecasts_noIC$datetime >="2021-03-12","Stratified", "Mixed")
 
 #remove n=6 days with ice-cover 
-all_DA_forecasts <- all_DA_forecasts[!(as.Date(all_DA_forecasts$datetime) %in% c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
+all_DA_forecasts_noIC <- all_DA_forecasts_noIC[!(as.Date(all_DA_forecasts_noIC$datetime) %in% c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
                                                                                  as.Date("2021-02-13"),as.Date("2021-02-14"),as.Date("2021-02-15"))),]
 
 #drop 11m completely because some rows were NA when water level was low
-all_DA_forecasts <- all_DA_forecasts[!(all_DA_forecasts$depth==11),]
+all_DA_forecasts_noIC <- all_DA_forecasts_noIC[!(all_DA_forecasts_noIC$depth==11),]
 
 #change model_id to be all uppercase
-all_DA_forecasts$model_id <- str_to_title(all_DA_forecasts$model_id)
+all_DA_forecasts_noIC$model_id <- str_to_title(all_DA_forecasts_noIC$model_id)
 
 #only keep 2021 data
-all_DA_forecasts <- all_DA_forecasts[all_DA_forecasts$datetime<="2021-12-31",]
+all_DA_forecasts_noIC <- all_DA_forecasts_noIC[all_DA_forecasts_noIC$datetime<="2021-12-31",]
 
 #------------------------------------------------------------------------------#
 #calculate forecast skill metrics
 
 #forecast skill for each depth and horizon
-forecast_skill_depth_horizon <-  plyr::ddply(all_DA_forecasts, c("depth","horizon","phen", "model_id"), function(x) { #phen instead of datetime?
+forecast_skill_depth_horizon_noIC <-  plyr::ddply(all_DA_forecasts_noIC, c("depth","horizon","phen", "model_id"), function(x) { #phen instead of datetime?
   data.frame(
     RMSE = sqrt(mean((x$mean - x$observation)^2, na.rm = TRUE)),
     MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
@@ -77,7 +77,7 @@ forecast_skill_depth_horizon <-  plyr::ddply(all_DA_forecasts, c("depth","horizo
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
 #df with averaged forecast skill for all days (group by horizon, DA, and phen)
-forecast_horizon_avg <- plyr::ddply(all_DA_forecasts, c("horizon", "model_id", "phen"), function(x) {
+forecast_horizon_avg_noIC <- plyr::ddply(all_DA_forecasts_noIC, c("horizon", "model_id", "phen"), function(x) {
   data.frame(
     RMSE = sqrt(mean((x$mean - x$observation)^2, na.rm = TRUE)),
     MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
@@ -89,10 +89,10 @@ forecast_horizon_avg <- plyr::ddply(all_DA_forecasts, c("horizon", "model_id", "
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
 #order DA frequencies
-forecast_horizon_avg$model_id <- factor(forecast_horizon_avg$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
+forecast_horizon_avg_noIC$model_id <- factor(forecast_horizon_avg_noIC$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
 #df with averaged forecast skill for all days (group by depth, DA, and phen)
-forecast_depth_avg <- plyr::ddply(all_DA_forecasts, c("depth", "model_id", "phen"), function(x) {
+forecast_depth_avg_noIC <- plyr::ddply(all_DA_forecasts_noIC, c("depth", "model_id", "phen"), function(x) {
   data.frame(
     RMSE = sqrt(mean((x$mean - x$observation)^2, na.rm = TRUE)),
     MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
@@ -104,7 +104,7 @@ forecast_depth_avg <- plyr::ddply(all_DA_forecasts, c("depth", "model_id", "phen
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
 #order DA frequencies
-forecast_depth_avg$model_id <- factor(forecast_depth_avg$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
+forecast_depth_avg_noIC$model_id <- factor(forecast_depth_avg_noIC$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
 #------------------------------------------------------------------------------------------------#
 #FIGURES: parameter evolution figs 
@@ -263,28 +263,20 @@ forecast_depth_avg_yesIC <- plyr::ddply(all_DA_forecasts_yesIC, c("depth", "mode
 forecast_depth_avg_yesIC$model_id <- factor(forecast_depth_avg_yesIC$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
 #add IC y/n column
-forecast_skill_depth_horizon$IC <- "no"
+forecast_skill_depth_horizon_noIC$IC <- "no"
 forecast_skill_depth_horizon_yesIC$IC <- "yes"
 
-forecast_horizon_avg$IC <- "n"
+forecast_horizon_avg_noIC$IC <- "n"
 forecast_horizon_avg_yesIC$IC <- "y"
 
-forecast_depth_avg$IC <- "no"
+forecast_depth_avg_noIC$IC <- "no"
 forecast_depth_avg_yesIC$IC <- "yes"
-
-#combine to make a massive df
-UC <- rbind(forecast_skill_depth_horizon_yesIC,forecast_skill_depth_horizon)
-UC_depth <- rbind(forecast_depth_avg_yesIC,forecast_depth_avg)
-
-#round depth to nearest integer
-UC$depth <- ceiling(UC$depth)
-UC_depth$depth <- ceiling(UC_depth$depth)
 
 #rename depth facets
 depths <- c("1m","5m","9m")
 names(depths) <- c("1","5","9")
 
-IC_off_rmse <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9) & horizon > 0) ,
+IC_off_rmse <- ggplot(subset(forecast_skill_depth_horizon_noIC, depth %in% c(1,5,9) & horizon > 0) ,
                      aes(horizon, RMSE, color=as.factor(model_id), aes=as.factor(IC))) +  
                 ylab(expression("RMSE ("*degree*C*")")) + xlab("Horizon (days)")+
                 geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + 
@@ -300,10 +292,10 @@ IC_off_rmse <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9) &
                 scale_color_manual(values=cb_friendly_2)  
 
 tag_facet2(IC_off_rmse, fontface = 1, hjust=0, size=3, tag_pool = c("a","b","c","d","e","f"))
-ggsave(file.path(lake_directory,"analysis/figures/UC_RMSEvsDAfreq_depth_facets_IC_off.jpg"),width=3.5, height=4)
+#ggsave(file.path(lake_directory,"analysis/figures/UC_RMSEvsDAfreq_depth_facets_IC_off.jpg"),width=3.5, height=4)
 
 
-IC_off_var <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9) & horizon > 0) ,
+IC_off_var <- ggplot(subset(forecast_skill_depth_horizon_noIC, depth %in% c(1,5,9) & horizon > 0) ,
                       aes(horizon, variance, color=as.factor(model_id), aes=as.factor(IC))) +  
                 ylab("Variance") + xlab("Horizon (days)")+ ylim(0,6.5) +
                 geom_line() + theme_bw() + guides(color=guide_legend(title="DA frequency")) + 
@@ -318,7 +310,7 @@ IC_off_var <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9) & 
                 scale_color_manual(values=cb_friendly_2)  
 
 tag_facet2(IC_off_var, fontface = 1, size=3, tag_pool = c("a","b","c","d","e","f"))  
-ggsave(file.path(lake_directory,"analysis/figures/UC_variancevsDAfreq_depth_facets_IC_off.jpg"),width=3.5, height=4)
+#ggsave(file.path(lake_directory,"analysis/figures/UC_variancevsDAfreq_depth_facets_IC_off.jpg"),width=3.5, height=4)
 
 #-------------------------------------------------------------------------------#
 #FIGURE 9 - proportion of IC uncertainty vs horizon
@@ -332,16 +324,18 @@ UC_prop <- data.frame("depth" = forecast_skill_depth_horizon_yesIC$depth,
                       "sd" = forecast_skill_depth_horizon_yesIC$sd)
 
 UC_prop$prop_var <- ((forecast_skill_depth_horizon_yesIC$variance - 
-                        forecast_skill_depth_horizon$variance) / 
+                        forecast_skill_depth_horizon_noIC$variance) / 
                        forecast_skill_depth_horizon_yesIC$variance)
 
+#set negative proportions to 0
+UC_prop$prop_var[UC_prop$prop_var<0] <- 0
 
 fig9 <- ggplot(subset(UC_prop, depth %in% c(1,5,9) & horizon > 0) ,
                aes(horizon, prop_var, color=as.factor(model_id))) +  
   ylab("Proportion of IC uncertainty") + 
   geom_line() + theme_bw() +# geom_point() +
   guides(color=guide_legend(title="DA frequency")) + 
-  xlab("Horizon (Days)")+ ylim(-0.14, 0.85) +
+  xlab("Horizon (Days)")+ ylim(0, 0.85) +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"),
         legend.position = "right",
         legend.background = element_blank(), 
@@ -358,7 +352,7 @@ fig9 <- ggplot(subset(UC_prop, depth %in% c(1,5,9) & horizon > 0) ,
   scale_color_manual(values=cb_friendly_2) #+geom_point
 
 tag_facet2(fig9, fontface = 1, size=3, tag_pool = c("a","b","c","d","e","f"))  
-ggsave(file.path(lake_directory,"analysis/figures/UC_prop_ICdvshorizon_depth_facets_var.jpg"),width=3.5, height=4)
+#ggsave(file.path(lake_directory,"analysis/figures/UC_prop_ICdvshorizon_depth_facets_var.jpg"),width=3.5, height=4)
 
 mean(UC_prop$prop_var[UC_prop$horizon==1 & UC_prop$model_id=="Daily"])
 

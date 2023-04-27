@@ -249,7 +249,7 @@ all_da_sub_final$model_id <- factor(all_da_sub_final$model_id, levels = c("Daily
 #add new column for date (reference_datetime + horizon)
 all_da_sub_final$date <- all_da_sub_final$reference_datetime + all_da_sub_final$horizon
 
-#change first 10 to 9m for 6jul-13Jul - super hacky...
+#change first 10 to 9m for 6jul-13Jul bc of rounding issues with changing water level - super hacky...
 obs$depth[obs$datetime=="2021-07-06" & obs$depth==10][1] <- 9
 obs$depth[obs$datetime=="2021-07-07" & obs$depth==10][1] <- 9
 obs$depth[obs$datetime=="2021-07-08" & obs$depth==10][1] <- 9
@@ -292,12 +292,14 @@ fig4_poc <- ggplot(subset(all_da_sub_final, depth %in% c(1,5,9)), aes(horizon, f
   scale_fill_manual(values=rev(cb_friendly_2), 
                     labels=c("Daily","Weekly","Fortnightly","Monthly")) + 
   guides(fill="none") + new_scale_fill() +
-  geom_vline(xintercept=as.Date("2021-07-22")) +
+  #geom_vline(xintercept=as.Date("2021-07-22")) +
   geom_point(data=subset(obs, depth %in% c(1,5,9)), 
              aes(x=datetime, y=observation, size=siz, fill=col), 
              pch=21, color="black") + 
   scale_fill_manual(values=c(rev(cb_friendly_2)), 
                     labels=c("Daily","Weekly","Fortnightly","Monthly", "")) +
+  scale_x_date(date_breaks = "1 week", date_labels = "%b %d", 
+               limits = c(as.Date("2021-06-25"),NA)) +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), 
         legend.position = "right", legend.box.margin=margin(-10,-1,-10,-10),
         legend.background = element_blank(), panel.grid.minor = element_blank(), 
@@ -306,12 +308,12 @@ fig4_poc <- ggplot(subset(all_da_sub_final, depth %in% c(1,5,9)), aes(horizon, f
         legend.title = element_text(size = 4.5),legend.text  = element_text(size = 4.5), 
         panel.spacing=unit(0, "cm"), axis.text.y = element_text(size=6),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6)) +
-  facet_wrap(~depth, ncol = 1, scales = "free_y") +
+  facet_wrap(~depth, ncol = 1, scales = "free_y",labeller = labeller(depth = depths)) +
   ylab(expression("Temperature ("*degree*C*")")) + xlab("")  + 
   scale_color_manual(values=rev(cb_friendly_2)) + 
   scale_size_manual(values=c(0.8,0.1)) +
-  geom_text(x=as.Date("2021-07-18"), y=24, label="Past", color="black", size=2) + 
-  geom_text(x=as.Date("2021-07-26"), y=24, label="Future", color="black", size=2) +
+  #geom_text(x=as.Date("2021-07-18"), y=24, label="Past", color="black", size=2) + 
+  #geom_text(x=as.Date("2021-07-26"), y=24, label="Future", color="black", size=2) +
   guides(fill = guide_legend(title="DA frequency", 
                              override.aes = list(alpha=1,
                                                 pch=c(rep(21,4),NA),
