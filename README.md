@@ -17,4 +17,4 @@ This branch includes code required to reproduce figures from BVR FLARE DA experi
 
 3.  Run "02_combined_workflows.R" in the workflows/DA_experiments folder to iteratively generate forecasts for every data assimilation frequency and day in the forecast period
 
-    **Note** Running forecasts for 365 days and all four data assimilation frequencies will take \> 10 days and the forecasts that are generated will be slightly different than the ones used in this analysis due to the stochasticity involved in accounting for uncertainty in the FLARE workflow.
+    **Note** Running forecasts for 365 days and all four data assimilation frequencies will take \> 10 days and the forecasts that are generated will be slightly different than the ones used in this analysis due to the randomness involved in accounting for forecast uncertainty.
