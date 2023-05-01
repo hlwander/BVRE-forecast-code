@@ -17,6 +17,10 @@ tag_facet2 <- function(p, open = "(", close = ")", tag_pool = letters, x = -Inf,
 
 #set wd
 lake_directory <- here::here()
+forecast_site <- "bvre"
+configure_run_file <- "configure_run.yml"
+config_files <- "configure_flare.yml"
+config_set_name <- "DA_experiments"
 setwd(lake_directory)
 
 #read in all forecasts 
@@ -330,35 +334,42 @@ mean(all_da_sub_final$forecast_lower_95[all_da_sub_final$horizon==1 & all_da_sub
 mean(all_da_sub_final$forecast_upper_95[all_da_sub_final$horizon==29 & all_da_sub_final$model_id=="Monthly"]) -
   mean(all_da_sub_final$forecast_lower_95[all_da_sub_final$horizon==29 & all_da_sub_final$model_id=="Monthly"])
 
-
+# Rename columns
+all_DA_forecasts <- all_DA_forecasts |>
+  dplyr::rename(forecast_upper_95 = quantile97.5, 
+                forecast_lower_95 = "quantile02.5")
 
 #uncertainty range across depths and mixed vs stratified periods
-((mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Monthly"]) -
-    mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Monthly"])) -
+((mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Monthly"]) -
+    mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Monthly"])) -
     
-    (mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Daily"]) -
-       mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Daily"]))) /
+    (mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Daily"]) -
+       mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Daily"]))) /
   
-  mean((mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Monthly"]) -
-          mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Monthly"])),
-       (mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Daily"]) -
-          mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Mixed" & DA_sub_final$model_id=="Daily"]))) *100
+  mean((mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Monthly"]) -
+          mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Monthly"])),
+       (mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Daily"]) -
+          mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Daily"]))) *100
 
 
-((mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Monthly"]) -
-    mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Monthly"])) -
+((mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Monthly"]) -
+    mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Monthly"])) -
     
-    (mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Daily"]) -
-       mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Daily"]))) / 
+    (mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Daily"]) -
+       mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Daily"]))) / 
   
-  mean((mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Monthly"]) -
-          mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Monthly"])),
-       (mean(DA_sub_final$forecast_upper_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Daily"]) -
-          mean(DA_sub_final$forecast_lower_95[DA_sub_final$phen=="Stratified" & DA_sub_final$model_id=="Daily"]))) *100
+  mean((mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Monthly"]) -
+          mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Monthly"])),
+       (mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Daily"]) -
+          mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Daily"]))) *100
 
 #--------------------------------------------------------------------------------#
 #Fig 3 - water temp phenology fig
 # Read in FLARE observations ----
+config <- FLAREr::set_configuration(configure_run_file, lake_directory, 
+                                    config_set_name = config_set_name, 
+                                    sim_name = NA)
+
 target_file <- file.path(config$file_path$qaqc_data_directory,
                          "bvre-targets-insitu.csv")
 obs <- read.csv(target_file)
@@ -479,7 +490,7 @@ depths <- c("1m","5m","9m")
 names(depths) <- c("1","5","9")
 
 #order factor levels
-kw_horizons$model_id <- factor(kw_horizons$model_id, levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
+# kw_horizons$model_id <- factor(kw_horizons$model_id, levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
 figs1 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9) & horizon > 0) ,
                aes(horizon, CRPS, color=as.factor(model_id))) +  
@@ -549,8 +560,9 @@ ggsave(file.path(lake_directory,"analysis/figures/DA_freq_2021_SI.jpg"), width=4
 # ice-on/off dates for BVR 2021: 10Jan/12Jan, 30Jan/31Jan 13Feb/16Feb
 
 #creating smaller dataset for kw test w/ 1,5,9m and 1,7,35 days
+forecast_skill_depth_horizon_27nov <- all_DA_forecasts[all_DA_forecasts$reference_datetime == "2021-11-27 00:00:00", ]
 kw_horizons <- forecast_skill_depth_horizon_27nov[forecast_skill_depth_horizon_27nov$depth %in% c(1,5,9) & forecast_skill_depth_horizon_27nov$horizon %in% c(1,7,35) & 
-                                                    forecast_skill_depth_horizon_27nov$DA %in% c("Daily","Weekly","Fortnightly","Monthly"),]
+                                                    forecast_skill_depth_horizon_27nov$model_id %in% c("Daily","Weekly","Fortnightly","Monthly"),]
 
 #only select mixed period
 kw_horizons_mixed <- kw_horizons[kw_horizons$phen=="Mixed",]
@@ -559,7 +571,7 @@ kw_horizons_mixed <- kw_horizons[kw_horizons$phen=="Mixed",]
 #create new df with all mixed days AND mixed days w/o ice
 kw_horizons_mixed_sub <-   rbind(
   cbind(kw_horizons_mixed, faceter = "all"),
-  cbind(kw_horizons_mixed[!(kw_horizons_mixed$forecast_date %in% 
+  cbind(kw_horizons_mixed[!(kw_horizons_mixed$reference_datetime %in% 
                               c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
                                 as.Date("2021-02-13"),as.Date("2021-02-14"),as.Date("2021-02-15"))),],
         faceter = "no ice")
@@ -573,8 +585,9 @@ names(faceter) <- c("all","no ice")
 depths <- c("1m","5m","9m")
 names(depths) <- c("1","5","9")
 
-#order factor levels
-kw_horizons_mixed_sub$DA <- factor(kw_horizons_mixed_sub$DA, levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
+#order factor levels 
+kw_horizons_mixed_sub$DA <- factor(kw_horizons_mixed_sub$model_id,
+                                   levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
 kw_horizons_mixed_sub %>%
   group_by(DA,depth,horizon,faceter) %>%  # do the same calcs for each box
