@@ -87,9 +87,9 @@ in_situ_qaqc <- function(insitu_obs_fname,
   d_clean$site_id <- "bvre"
   
   d_clean <- d_clean %>%
-    rename(datetime = time,
+    dplyr::rename(datetime = time,
            observation = observed) |>
-    select(datetime, site_id, depth, observation, variable)
+    dplyr::select(datetime, site_id, depth, observation, variable)
   
   d_clean$observation <- round(d_clean$observation, digits = 4)
   
