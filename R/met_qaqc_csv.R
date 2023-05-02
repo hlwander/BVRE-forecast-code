@@ -177,7 +177,7 @@ met_qaqc_csv <- function(realtime_file,
   d$rpot <- 1366 * d$cosz
   
   d |>
-    select(time, ShortWave, rpot) |>
+    dplyr::select(time, ShortWave, rpot) |>
     pivot_longer(cols = -time, names_to = "variable", values_to = "value") |>
     mutate(hour = hour(time)) |>
     ggplot(aes(x = time, y = value, color = variable)) +
@@ -210,7 +210,7 @@ met_qaqc_csv <- function(realtime_file,
                                   press = d$air_pressure)
   
   d <- d %>%
-    select(time, air_temperature, air_pressure, relative_humidity, surface_downwelling_longwave_flux_in_air, surface_downwelling_shortwave_flux_in_air, precipitation_flux, specific_humidity, wind_speed)
+    dplyr::select(time, air_temperature, air_pressure, relative_humidity, surface_downwelling_longwave_flux_in_air, surface_downwelling_shortwave_flux_in_air, precipitation_flux, specific_humidity, wind_speed)
   
   cf_var_names1 <- c("air_temperature", "air_pressure", "relative_humidity", "surface_downwelling_longwave_flux_in_air",
                      "surface_downwelling_shortwave_flux_in_air", "precipitation_flux","specific_humidity","wind_speed")
@@ -239,7 +239,7 @@ met_qaqc_csv <- function(realtime_file,
              air_temperature = air_temperature + 273.15,
              relative_humidity = relative_humidity/ 100,
              precipitation_flux = precipitation_flux * 1000 / (60 * 60 * 24)) %>%
-      select(all_of(names(d)))
+      dplyr::select(all_of(names(d)))
     
     d_nldas$time <- lubridate::with_tz(d_nldas$time, tzone = "UTC")
     
