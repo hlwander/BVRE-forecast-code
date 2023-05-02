@@ -6,7 +6,7 @@ This branch includes code required to reproduce figures from BVR FLARE DA experi
 
 1.  Download or clone github repository to your local computer
 2.  Download forecast and score parquet files generated from combined_workflow.R script in the workflows/DA_experiments folder **(LINK TO OTHER ZENODO PUB?**)
-3.  Run "01_generate_targets.R" in the workflows/DA_experiments folder to download driver data and observation files from EDI or GitHub.
+3.  Run "01_generate_targets.R" in the workflows/DA_experiments folder to download driver data and observation files from EDI or GitHub
 4.  Run "BVR_FLARE_ms_figs.R" script in the workflows/DA_experiments folder to reproduce manuscript and supplemental figures
 5.  Run "BVR_FLARE_UC_figs.R" script in the workflows/DA_experiments folder to reproduce Fig. 9 (proportion of IC uncertainty) and SI figures for forecasts run without initial conditions uncertainty
 
