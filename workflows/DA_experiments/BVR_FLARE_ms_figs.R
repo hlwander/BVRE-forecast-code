@@ -2,7 +2,8 @@
 #09 Sep 2022 HLW
 
 #load libraries
-pacman::p_load(dplyr,readr,ggplot2, FSA, AnalystHelper, rcompanion, rstatix, ggpubr, stringr, egg, viridis, padr, ggnewscale, purrr)
+pacman::p_load(dplyr,readr,ggplot2, FSA, AnalystHelper, rcompanion, 
+               rstatix, ggpubr, stringr, egg, viridis, padr, ggnewscale, purrr)
 
 #change tag_facet code
 tag_facet2 <- function(p, open = "(", close = ")", tag_pool = letters, x = -Inf, y = Inf, 
@@ -174,7 +175,7 @@ fig8 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9) & horizo
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_color_manual(values=cb_friendly_2) 
 tag_facet2(fig8, fontface = 1, size=3,
            tag_pool = c("a","b","c","d","e","f"))
-ggsave(file.path(lake_directory,"analysis/figures/Varvshorizon_depth_facets_fig8.jpg"),width=3.5, height=4)
+#ggsave(file.path(lake_directory,"analysis/figures/Varvshorizon_depth_facets_fig8.jpg"),width=3.5, height=4)
 
 
 mean(forecast_skill_depth_horizon$RMSE)
@@ -324,7 +325,7 @@ fig4_poc <- ggplot(subset(all_da_sub_final, depth %in% c(1,5,9)), aes(horizon, f
          color="none", size="none")
 tag_facet2(fig4_poc, fontface = 1, hjust=0.7, size=3,
            tag_pool = c("a","b","c"),  x = as.Date("2021-06-24"))  
-ggsave(file.path(lake_directory,"analysis/figures/forecast_ProofOfConcept_fig4.jpg"), width=3.5, height=4) 
+#ggsave(file.path(lake_directory,"analysis/figures/forecast_ProofOfConcept_fig4.jpg"), width=3.5, height=4) 
 
 
 #% uncertainty at 0-day horizon for daily and monthly forecasts
@@ -407,7 +408,7 @@ ggplot(sub) +   theme_bw() +
   scale_fill_manual('', values = c('gray','white')) +
   scale_color_viridis(option="B", discrete="TRUE", direction=-1) +
   guides(color=guide_legend("Depth (m)"),fill= guide_legend("Period",order = 1, override.aes= list(color="black", lwd=0.1)))
-ggsave(file.path(lake_directory,"analysis/figures/2021_watertemp_mixedVstratified.jpg"), width=4, height=3)
+#ggsave(file.path(lake_directory,"analysis/figures/2021_watertemp_mixedVstratified.jpg"), width=4, height=3)
 
 range(sub$observation[sub$datetime>= "2021-03-12" & sub$datetime<= "2021-11-07"])
 
@@ -446,7 +447,7 @@ fig5 <- ggplot(subset(params,horizon==1), aes(as.Date(datetime), mean, color=mod
 
 tag_facet2(fig5, fontface = 1, x=as.Date("2021-01-01"), hjust=0.7, size=3,
            tag_pool = c("a","b","c"))
-ggsave(file.path(lake_directory,"analysis/figures/paramevolvstime_1day_fig5.jpg"),width=3.5, height=4)
+#ggsave(file.path(lake_directory,"analysis/figures/paramevolvstime_1day_fig5.jpg"),width=3.5, height=4)
 
 #figuring out the date that DA parameters diverge
 mean(params$mean[params$variable=="lw_factor" & params$model_id=="Daily" & params$datetime >= "2021-04-01"])
@@ -510,7 +511,7 @@ figs1 <- ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,5,9) & horiz
 tag_facet2(figs1, fontface = 1, size=3,
            tag_pool = c("a","b","c","d","e","f"))
 
-ggsave(file.path(lake_directory,"analysis/figures/CRPSvsDAfreq_depth_facets_figs1.jpg"),width=3.5, height=4)
+#ggsave(file.path(lake_directory,"analysis/figures/CRPSvsDAfreq_depth_facets_figs1.jpg"),width=3.5, height=4)
 
 #------------------------------------------------------------------------------#
 #figure to visualize different DA frequencies over 1 year period
@@ -553,59 +554,10 @@ ggplot(dates_long, aes(value,model_id, color=model_id)) + geom_count(show.legend
         panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(vjust = 0.5,size=6), 
         axis.text.y = element_text(size=6)) 
-ggsave(file.path(lake_directory,"analysis/figures/DA_freq_2021_SI.jpg"), width=4, height=3.5) 
+#ggsave(file.path(lake_directory,"analysis/figures/DA_freq_2021_SI.jpg"), width=4, height=3.5) 
 
 #--------------------------------------------------------------------------------------------#
-# Figure comparing Mixed w/ ice-cover data and Mixed w/o ice-cover data
 # ice-on/off dates for BVR 2021: 10Jan/12Jan, 30Jan/31Jan 13Feb/16Feb
-
-#creating smaller dataset for kw test w/ 1,5,9m and 1,7,35 days
-forecast_skill_depth_horizon_27nov <- all_DA_forecasts[all_DA_forecasts$reference_datetime == "2021-11-27 00:00:00", ]
-kw_horizons <- forecast_skill_depth_horizon_27nov[forecast_skill_depth_horizon_27nov$depth %in% c(1,5,9) & forecast_skill_depth_horizon_27nov$horizon %in% c(1,7,35) & 
-                                                    forecast_skill_depth_horizon_27nov$model_id %in% c("Daily","Weekly","Fortnightly","Monthly"),]
-
-#only select mixed period
-kw_horizons_mixed <- kw_horizons[kw_horizons$phen=="Mixed",]
-
-
-#create new df with all mixed days AND mixed days w/o ice
-kw_horizons_mixed_sub <-   rbind(
-  cbind(kw_horizons_mixed, faceter = "all"),
-  cbind(kw_horizons_mixed[!(kw_horizons_mixed$reference_datetime %in% 
-                              c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
-                                as.Date("2021-02-13"),as.Date("2021-02-14"),as.Date("2021-02-15"))),],
-        faceter = "no ice")
-)
-
-
-#rename depth and ice facets
-faceter <- c("Mixed with ice","Mixed without ice")
-names(faceter) <- c("all","no ice")
-
-depths <- c("1m","5m","9m")
-names(depths) <- c("1","5","9")
-
-#order factor levels 
-kw_horizons_mixed_sub$DA <- factor(kw_horizons_mixed_sub$model_id,
-                                   levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
-
-kw_horizons_mixed_sub %>%
-  group_by(DA,depth,horizon,faceter) %>%  # do the same calcs for each box
-  mutate(value2 = filter_lims(RMSE)) %>%
-  ggplot(aes(DA, value2, fill=as.factor(horizon))) +  ylab("RMSE") + xlab("")+
-  geom_boxplot(outlier.shape = NA) + theme_bw() + guides(fill=guide_legend(title="Horizon (days)")) +
-  geom_hline(yintercept=2, linetype='dashed', col = 'black') +
-  theme(text = element_text(size=4), axis.text = element_text(size=6, color="black"), legend.position = c(0.77,0.24),
-        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
-        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-        legend.title = element_text(size = 3),legend.text  = element_text(size = 3), panel.spacing=unit(0, "cm"),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=4), axis.text.y = element_text(size=4)) +
-  #geom_text(data=letters,aes(x=DA,y=0.2+max.RMSE,label=letters$letter),hjust=0.1,vjust = -0.1, size=1.5) +
-  facet_grid(depth~faceter, scales="free_y",labeller = labeller(faceter = faceter, depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) 
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_IcevsNoice.jpg"))
-
-
-
 #2021 phenology: 2021-03-08 is first time when >3 consecutive days had difference between surface and bottom >1C
 #code for calculating strat/mixed periods
 # bvr_temps <- temp_long %>% filter(temp_long$Variable=="temperature" & DateTime>= "2021-01-01") %>% select(DateTime, Reading, Depth) %>%
