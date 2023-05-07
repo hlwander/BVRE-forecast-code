@@ -335,34 +335,30 @@ mean(all_da_sub_final$forecast_lower_95[all_da_sub_final$horizon==1 & all_da_sub
 mean(all_da_sub_final$forecast_upper_95[all_da_sub_final$horizon==29 & all_da_sub_final$model_id=="Monthly"]) -
   mean(all_da_sub_final$forecast_lower_95[all_da_sub_final$horizon==29 & all_da_sub_final$model_id=="Monthly"])
 
-# Rename columns
-all_DA_forecasts <- all_DA_forecasts |>
-  dplyr::rename(forecast_upper_95 = quantile97.5, 
-                forecast_lower_95 = "quantile02.5")
 
 #uncertainty range across depths and mixed vs stratified periods
-((mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Monthly"]) -
-    mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Monthly"])) -
+((mean(all_DA_forecasts$quantile97.5[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Monthly"]) -
+    mean(all_DA_forecasts$quantile02.5[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Monthly"])) -
     
-    (mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Daily"]) -
-       mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Daily"]))) /
+    (mean(all_DA_forecasts$quantile97.5[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Daily"]) -
+       mean(all_DA_forecasts$quantile02.5[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Daily"]))) /
   
-  mean((mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Monthly"]) -
-          mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Monthly"])),
-       (mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Daily"]) -
-          mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Daily"]))) *100
+  mean((mean(all_DA_forecasts$quantile97.5[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Monthly"]) -
+          mean(all_DA_forecasts$quantile02.5[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Monthly"])),
+       (mean(all_DA_forecasts$quantile97.5[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Daily"]) -
+          mean(all_DA_forecasts$quantile02.5[all_DA_forecasts$phen=="Mixed" & all_DA_forecasts$model_id=="Daily"]))) *100
 
 
-((mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Monthly"]) -
-    mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Monthly"])) -
+((mean(all_DA_forecasts$quantile97.5[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Monthly"]) -
+    mean(all_DA_forecasts$quantile02.5[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Monthly"])) -
     
-    (mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Daily"]) -
-       mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Daily"]))) / 
+    (mean(all_DA_forecasts$quantile97.5[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Daily"]) -
+       mean(all_DA_forecasts$quantile02.5[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Daily"]))) / 
   
-  mean((mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Monthly"]) -
-          mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Monthly"])),
-       (mean(all_DA_forecasts$forecast_upper_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Daily"]) -
-          mean(all_DA_forecasts$forecast_lower_95[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Daily"]))) *100
+  mean((mean(all_DA_forecasts$quantile97.5[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Monthly"]) -
+          mean(all_DA_forecasts$quantile02.5[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Monthly"])),
+       (mean(all_DA_forecasts$quantile97.5[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Daily"]) -
+          mean(all_DA_forecasts$quantile02.5[all_DA_forecasts$phen=="Stratified" & all_DA_forecasts$model_id=="Daily"]))) *100
 
 #--------------------------------------------------------------------------------#
 #Fig 3 - water temp phenology fig
@@ -395,8 +391,6 @@ sub$depth <- floor(sub$depth)
 #rename 0 to 0.1
 sub$depth[sub$depth==0] <- 0.1
 
-#-------------------------------------------------------------------------------#
-# Fig 3 - phenology plot w/ temp at different depths 
 ggplot(sub) +   theme_bw() +
   geom_rect(data = phen, aes(fill = "Mixed"), xmin=-Inf ,xmax = as.Date("2021-03-11"), ymin = -Inf, ymax = Inf, inherit.aes = FALSE) + 
   geom_rect(data = phen, aes(fill = "Stratified"), xmin=as.Date("2021-03-12") ,xmax = as.Date("2021-11-07"), ymin = -Inf, ymax = Inf, inherit.aes = FALSE)+
@@ -512,6 +506,82 @@ tag_facet2(figs1, fontface = 1, size=3,
            tag_pool = c("a","b","c","d","e","f"))
 
 #ggsave(file.path(lake_directory,"analysis/figures/CRPSvsDAfreq_depth_facets_figs1.jpg"),width=3.5, height=4)
+
+#--------------------------------------------------------------------------------#
+#plot 1-day horizon uncertainty for entire year
+
+#forecast skill for each horizon and day of the year
+forecast_days_horizons <-  plyr::ddply(all_DA_forecasts, c("reference_datetime","horizon", "model_id"), function(x) {
+  data.frame(
+    forecast_mean = mean(x$mean, na.rm = TRUE),
+    forecast_sd = mean(x$sd, na.rm = TRUE),
+    observed = mean(x$observation, na.rm=TRUE)
+  )
+}, .progress = plyr::progress_text(), .parallel = FALSE) 
+
+#order DA frequencies
+forecast_days_horizons$model_id <- factor(forecast_days_horizons$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
+
+#convert ref date to datetime format
+forecast_days_horizons$reference_datetime <- as.Date(forecast_days_horizons$reference_datetime)
+
+ggplot(data=subset(forecast_days_horizons, horizon==1), aes(x=reference_datetime,y=forecast_mean)) +
+  geom_point(data=subset(forecast_days_horizons, horizon==1), 
+             aes(x=reference_datetime, y=observed, fill=model_id), 
+             pch=21, color="black", size=NA) +
+ geom_ribbon(data=subset(forecast_days_horizons, horizon==1 & model_id=="Monthly"), 
+             aes(x=reference_datetime, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
+                 ymax = forecast_mean+forecast_sd), color=cb_friendly_2[4], 
+             fill=cb_friendly_2[4], alpha=0.4) +
+ geom_ribbon(data=subset(forecast_days_horizons, horizon==1 & model_id=="Fortnightly"), 
+             aes(x=reference_datetime, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
+                 ymax = forecast_mean+forecast_sd), color=cb_friendly_2[3], 
+             fill=cb_friendly_2[3], alpha=0.4) +
+ geom_ribbon(data=subset(forecast_days_horizons, horizon==1 & model_id=="Weekly"), 
+             aes(x=reference_datetime, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
+                 ymax = forecast_mean+forecast_sd), color=cb_friendly_2[2], 
+             fill=cb_friendly_2[2], alpha=0.4)  +
+ geom_ribbon(data=subset(forecast_days_horizons, horizon==1 & model_id=="Daily"), 
+             aes(x=reference_datetime, y = forecast_mean, ymin = forecast_mean-forecast_sd, 
+                 ymax = forecast_mean+forecast_sd), color=cb_friendly_2[1], 
+             fill=cb_friendly_2[1], alpha=0.4) + theme_bw() + 
+ scale_fill_manual(values=rev(cb_friendly_2), 
+                   labels=c("Daily","Weekly","Fortnightly","Monthly")) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), 
+        legend.position = "right", #legend.box.margin=margin(-10,-1,-10,-10),
+        legend.background = element_blank(), panel.grid.minor = element_blank(), 
+        legend.key=element_rect(fill=NA), plot.margin = unit(c(0,0.05,-0.2,0), "cm"),
+        legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
+        legend.title = element_text(size = 4.5),legend.text  = element_text(size = 4.5), 
+        panel.spacing=unit(0, "cm"), axis.text.y = element_text(size=6),
+        axis.text.x = element_text(vjust = 0.5,size=6)) +
+  ylab(expression("Temperature ("*degree*C*")")) + xlab("") +
+  guides(fill = guide_legend(title="DA frequency",
+                             override.aes = list(pch=c(rep(21,4)),
+                                                 size=2)), color="none")
+ggsave(file.path(lake_directory,"analysis/figures/Temp_UC_2021_1day.jpg"),width=4, height=3)
+
+#now calculate 1-day ahead UC for daily and monthly DA
+mean(forecast_days_horizons$forecast_mean[forecast_days_horizons$horizon==1 & 
+                                       forecast_days_horizons$model_id=="Daily"] +
+  forecast_days_horizons$forecast_sd[forecast_days_horizons$horizon==1 & 
+                                         forecast_days_horizons$model_id=="Daily"]) -
+
+mean(forecast_days_horizons$forecast_mean[forecast_days_horizons$horizon==1 & 
+                                            forecast_days_horizons$model_id=="Daily"] -
+       forecast_days_horizons$forecast_sd[forecast_days_horizons$horizon==1 & 
+                                            forecast_days_horizons$model_id=="Daily"])
+
+mean(forecast_days_horizons$forecast_mean[forecast_days_horizons$horizon==1 & 
+                                            forecast_days_horizons$model_id=="Monthly"] +
+       forecast_days_horizons$forecast_sd[forecast_days_horizons$horizon==1 & 
+                                            forecast_days_horizons$model_id=="Monthly"]) -
+  
+  mean(forecast_days_horizons$forecast_mean[forecast_days_horizons$horizon==1 & 
+                                              forecast_days_horizons$model_id=="Monthly"] -
+         forecast_days_horizons$forecast_sd[forecast_days_horizons$horizon==1 & 
+                                              forecast_days_horizons$model_id=="Monthly"])
+  
 
 #------------------------------------------------------------------------------#
 #figure to visualize different DA frequencies over 1 year period
