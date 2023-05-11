@@ -2,7 +2,7 @@ library(arrow)
 library(tidyverse)
 
 site_id_list <- c("bvre")
-model_id_list <- c("Daily","Weekly","Fortnightly","Monthly")
+model_id_list <- c("daily","weekly","fortnightly","monthly")
 use_s3 <- FALSE
 start_date_list <- seq(as.Date("2020-11-27"), as.Date("2022-02-05"), by="days")
 
@@ -43,14 +43,21 @@ message("Archiving forecast parquets")
 if(use_s3){
   s3 <- s3_bucket("forecasts/parquets", endpoint_override = "s3.flare-forecast.org", anonymous = TRUE)
 }else{
-  s3 <- file.path(lake_directory, "forecasts/all_UC")
+  s3_all_UC <- file.path(lake_directory, "forecasts/parquets/all_UC")
+  s3_IC_off <- file.path(lake_directory, "forecasts/parquets/IC_off")
 }
 
-df <- open_dataset(s3) |> 
+df_all_UC <- open_dataset(s3_all_UC) |> 
   filter(site_id %in% site_id_list,
          model_id %in% model_id_list)
 
-write_dataset(df, path = file.path(lake_directory, "archive/forecasts"), hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
+write_dataset(df_all_UC, path = file.path(lake_directory, "archive/forecasts/forecasts/all_UC"), hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
+
+df_IC_off <- open_dataset(s3_IC_off) |> 
+  filter(site_id %in% site_id_list,
+         model_id %in% model_id_list)
+
+write_dataset(df_IC_off, path = file.path(lake_directory, "archive/forecasts/forecasts/IC_off"), hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
 
 setwd(file.path(lake_directory, "archive/forecasts"))
 files2zip <- fs::dir_ls(recurse = TRUE)
@@ -64,14 +71,22 @@ message("Archiving score parquets")
 if(use_s3){
   s3 <- s3_bucket("scores/parquets", endpoint_override = "s3.flare-forecast.org", anonymous = TRUE)
 }else{
-  s3 <- file.path(lake_directory, "scores")
+  s3_all_UC <- file.path(lake_directory, "scores/all_UC")
+  s3_IC_off <- file.path(lake_directory, "scores/IC_off")
 }
 
-df <- open_dataset(s3) |> 
+df_all_UC <- open_dataset(s3_all_UC) |> 
   filter(site_id %in% site_id_list,
          model_id %in% model_id_list)
 
-write_dataset(df, path = file.path(lake_directory, "archive/scores/scores"), hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
+write_dataset(df_all_UC, path = file.path(lake_directory, "archive/scores/scores/all_UC"), hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
+
+df_IC_off <- open_dataset(s3_IC_off) |> 
+  filter(site_id %in% site_id_list,
+         model_id %in% model_id_list)
+
+write_dataset(df_IC_off, path = file.path(lake_directory, "archive/scores/scores/IC_off"), hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
+
 
 setwd(file.path(lake_directory, "archive/scores"))
 files2zip <- fs::dir_ls(recurse = TRUE)
