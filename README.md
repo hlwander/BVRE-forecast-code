@@ -5,7 +5,7 @@ This branch includes code required to reproduce figures from BVR FLARE DA experi
 # Instructions to reproduce manuscript + SI figures:
 
 1.  Download or clone github repository to your local computer
-2.  Download forecast and score parquet files generated from combined_workflow.R script in the workflows/DA_experiments folder **(LINK TO OTHER ZENODO PUB?**)
+2.  Download scores.zip from Zenodo (<https://zenodo.org/record/7925098#.ZF0a8C-B2ik>)
 3.  Run "01_generate_targets.R" in the workflows/DA_experiments folder to download driver data and observation files from EDI or GitHub
 4.  Run "BVR_FLARE_ms_figs.R" script in the workflows/DA_experiments folder to reproduce manuscript and supplemental figures
 5.  Run "BVR_FLARE_UC_figs.R" script in the workflows/DA_experiments folder to reproduce Fig. 9 (proportion of IC uncertainty) and SI figures for forecasts run without initial conditions uncertainty
@@ -18,4 +18,4 @@ This branch includes code required to reproduce figures from BVR FLARE DA experi
 
 3.  Run "02_combined_workflows.R" in the workflows/DA_experiments folder to iteratively generate forecasts for every data assimilation frequency and day in the forecast period
 
-    **Note** Running forecasts for 365 days and all four data assimilation frequencies will take \> 10 days and the forecasts that are generated will be slightly different than the ones used in this analysis due to the randomness involved in accounting for forecast uncertainty.
+    **Note** Running forecasts for 365 days and all four data assimilation frequencies will take \> 10 days and the forecasts that are generated will likely be slightly different than the ones used in this analysis.
