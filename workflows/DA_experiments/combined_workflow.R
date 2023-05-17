@@ -25,6 +25,19 @@ if(use_archive){
   met_local_directory <- NULL
 }
 
+#read in temp obs from EDI
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/389/6/a5524c686e2154ec0fd0459d46a7d1eb",
+                     file = config_obs$met_raw_obs_fname[2],
+                     lake_directory)
+
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/725/2/026a6e2cca8bdf18720d6a10d8860e3d",
+                     file = config_obs$insitu_obs_fname[2],
+                     lake_directory)
+
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/725/2/8c0d1d8ea078d274c252cd362a500d26",
+                     file = config_obs$insitu_obs_fname[3],
+                     lake_directory)
+
 #DA frequency vectors
 daily <- seq.Date(as.Date("2020-11-27"), as.Date("2022-02-01"), by = 1)#changing end to 2022-02-01 because need observations to evaluate forecasts 
 date_list <- list(daily = daily,                                      
@@ -75,12 +88,6 @@ message("Generating targets")
 source(file.path(lake_directory, "R", "met_qaqc_csv.R"))
 source(file.path(lake_directory, "R", "in_situ_qaqc.R"))
 source(file.path(lake_directory, "R", "temp_oxy_chla_qaqc.R"))
-source(file.path(lake_directory, "R", "extract_CTD.R"))
-source(file.path(lake_directory, "R", "extract_secchi.R"))
-source(file.path(lake_directory, "R", "extract_nutrients.R"))
-source(file.path(lake_directory, "R", "extract_ch4.R"))
-source(file.path(lake_directory, "R", "inflow_qaqc.R"))
-#source(file.path(lake_directory, "R/old", "TMWB_inflow_model.R"))
 
 #' Generate the `config_obs` object and create directories if necessary
 
