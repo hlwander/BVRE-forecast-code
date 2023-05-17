@@ -9,17 +9,20 @@ forecast_site <- "bvre"
 configure_run_file <- "configure_run.yml"
 config_files <- "configure_flare.yml"
 config_set_name <- "DA_experiments"
-use_archive <- FALSE
+use_archive <- TRUE
+use_s3 <- FALSE
 
 starting_index <- 1
 
 if(use_archive){
   use_s3 <- FALSE
+  download.file(url = "https://zenodo.org/record/7925098/files/drivers.zip?download=1", destfile = file.path(lake_directory,"drivers.zip"), method = "curl")
+  met_local_directory <- file.path(lake_directory,"drivers/noaa/gefs-v12-reprocess")
 }else{
   Sys.setenv('AWS_DEFAULT_REGION' = 's3',
              'AWS_S3_ENDPOINT' = 'flare-forecast.org',
              'USE_HTTPS' = TRUE)
-  use_s3 <- FALSE
+  met_local_directory <- NULL
 }
 
 #DA frequency vectors
@@ -184,7 +187,7 @@ for(i in starting_index:nrow(sims)){
                                               use_s3 = TRUE,
                                               bucket = config$s3$drivers$bucket,
                                               endpoint = config$s3$drivers$endpoint,
-                                              local_directory = NULL,
+                                              local_directory = met_local_directory,
                                               use_forecast = TRUE,
                                               use_ler_vars = FALSE,
                                               use_siteid_s3 = TRUE)

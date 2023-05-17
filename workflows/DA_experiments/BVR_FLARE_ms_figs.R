@@ -1,6 +1,8 @@
 #Figures for BVR FLARE ms
 #09 Sep 2022 HLW
 
+
+
 #load libraries
 pacman::p_load(dplyr,readr,ggplot2, FSA, AnalystHelper, rcompanion, 
                rstatix, ggpubr, stringr, egg, viridis, padr, ggnewscale, purrr)
@@ -23,6 +25,11 @@ configure_run_file <- "configure_run.yml"
 config_files <- "configure_flare.yml"
 config_set_name <- "DA_experiments"
 setwd(lake_directory)
+
+if(use_archive){
+  download.file(url = "https://zenodo.org/record/7925098/files/scores.zip?download=1", destfile = file.path(lake_directory,"scores.zip"), method = "curl")
+  unzip(file.path(lake_directory,"scores.zip") ,exdir = "scores")
+}
 
 #read in all forecasts 
 score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/all_UC"))
