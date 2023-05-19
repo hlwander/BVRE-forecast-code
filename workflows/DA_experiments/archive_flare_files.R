@@ -8,11 +8,6 @@ start_date_list <- seq(as.Date("2020-11-27"), as.Date("2022-02-05"), by="days")
 
 lake_directory <- here::here()
 
-fs::dir_create(file.path(lake_directory, "archive/forecasts/forecasts"))
-fs::dir_create(file.path(lake_directory, "archive/drivers/drivers"))
-fs::dir_create(file.path(lake_directory, "archive/scores/scores"))
-fs::dir_create(file.path(lake_directory, "archive/targets/targets"))
-
 message("Archiving stage 2 NOAA")
 
 s3 <- s3_bucket("drivers/noaa/gefs-v12-reprocess/stage2/parquet/0", endpoint_override = "s3.flare-forecast.org", anonymous = TRUE)
@@ -34,6 +29,7 @@ write_dataset(df, path = file.path(lake_directory, "archive/drivers/drivers/noaa
 
 setwd(file.path(lake_directory, "archive/drivers"))
 files2zip <- fs::dir_ls(recurse = TRUE)
+files2zip <- files2zip[stringr::str_detect(files2zip, pattern = "DS_Store", negate = TRUE)][-1]
 utils::zip(zipfile = file.path(lake_directory, "archive/drivers"), files = files2zip)
 
 ##############
@@ -61,6 +57,7 @@ write_dataset(df_IC_off, path = file.path(lake_directory, "archive/forecasts/for
 
 setwd(file.path(lake_directory, "archive/forecasts"))
 files2zip <- fs::dir_ls(recurse = TRUE)
+files2zip <- files2zip[stringr::str_detect(files2zip, pattern = "DS_Store", negate = TRUE)][-1]
 utils::zip(zipfile = file.path(lake_directory, "archive/forecasts"), files = files2zip)
 
 #######
@@ -90,6 +87,7 @@ write_dataset(df_IC_off, path = file.path(lake_directory, "archive/scores/scores
 
 setwd(file.path(lake_directory, "archive/scores"))
 files2zip <- fs::dir_ls(recurse = TRUE)
+files2zip <- files2zip[stringr::str_detect(files2zip, pattern = "DS_Store", negate = TRUE)][-1]
 utils::zip(zipfile = file.path(lake_directory, "archive/scores"), files = files2zip)
 
 #######
@@ -97,9 +95,12 @@ message("Archiving targets")
 
 s3 <- file.path(lake_directory, "targets")
 
-file.copy(from = s3, paste0(lake_directory,"/archive/targets/targets/"),
+fs::dir_create(file.path(lake_directory, "archive/targets"))
+
+file.copy(from = s3, paste0(lake_directory,"/archive/targets"),
           overwrite = TRUE, recursive = TRUE, copy.mode = TRUE)
 
 setwd(file.path(lake_directory, "archive/targets"))
 files2zip <- fs::dir_ls(recurse = TRUE)
+files2zip <- files2zip[stringr::str_detect(files2zip, pattern = "DS_Store", negate = TRUE)][-1]
 utils::zip(zipfile = file.path(lake_directory, "archive/targets"), files = files2zip)
