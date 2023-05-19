@@ -1,9 +1,6 @@
 #UC analysis figs
 #29 Dec 2022
 
-#load libraries
-pacman::p_load(ggplot2,tidyverse,FSA,rcompanion,ggpubr, egg)
-
 #change tag_facet code
 tag_facet2 <- function(p, open = "(", close = ")", tag_pool = letters, x = -Inf, y = Inf, 
                        hjust = -0.5, vjust = 1.5, fontface = 2, family = "", ...) {
@@ -21,7 +18,7 @@ lake_directory <- here::here()
 setwd(lake_directory)
 
 #read in all forecasts 
-score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/IC_off"))
+score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/scores/IC_off"))
 all_DA_forecasts_noIC <- arrow::open_dataset(score_dir) |> collect() |>   
   filter(!is.na(observation), variable == "temperature",horizon > 0.3) 
 
@@ -175,7 +172,7 @@ mean(c(last(params$mean[params$variable=="zone2temp" & params$model_id=="Daily"]
 # Forecasts with IC on vs off
 
 #read in all forecasts with IC on
-score_dir_yesIC <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/all_UC"))
+score_dir_yesIC <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/scores/all_UC"))
 all_DA_forecasts_yesIC <- arrow::open_dataset(score_dir_yesIC) |> collect() |>   
   filter(!is.na(observation), variable == "temperature",horizon > 0.3)
 

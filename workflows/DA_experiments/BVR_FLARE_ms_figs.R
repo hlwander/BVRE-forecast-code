@@ -1,10 +1,6 @@
 #Figures for BVR FLARE ms
 #09 Sep 2022 HLW
 
-#load libraries
-pacman::p_load(dplyr,readr,ggplot2, FSA, AnalystHelper, rcompanion, 
-               rstatix, ggpubr, stringr, egg, viridis, padr, ggnewscale, purrr)
-
 #change tag_facet code
 tag_facet2 <- function(p, open = "(", close = ")", tag_pool = letters, x = -Inf, y = Inf, 
                        hjust = -0.5, vjust = 1.5, fontface = 2, family = "", ...) {
@@ -22,6 +18,7 @@ forecast_site <- "bvre"
 configure_run_file <- "configure_run.yml"
 config_files <- "configure_flare.yml"
 config_set_name <- "DA_experiments"
+use_archive <- TRUE
 setwd(lake_directory)
 
 if(use_archive){
@@ -30,7 +27,7 @@ if(use_archive){
 }
 
 #read in all forecasts 
-score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/all_UC"))
+score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/scores/all_UC"))
 all_DA_forecasts <- arrow::open_dataset(score_dir) |> collect() |>   
   filter(!is.na(observation), variable == "temperature",horizon >= 0, 
          as.Date(reference_datetime) > "2020-12-31") 
@@ -372,8 +369,7 @@ config <- FLAREr::set_configuration(configure_run_file, lake_directory,
                                     config_set_name = config_set_name, 
                                     sim_name = NA)
 
-target_file <- file.path(config$file_path$qaqc_data_directory,
-                         "bvre-targets-insitu.csv")
+target_file <- file.path('/Users/MaryLofton/RProjects/BVRE-forecast-code/targets/targets/targets/bvre/bvre-targets-insitu.csv')
 obs <- read.csv(target_file)
 wtemp <- obs[obs$variable == "temperature", ] # Subset to temperature
 
@@ -414,7 +410,7 @@ range(sub$observation[sub$datetime>= "2021-03-12" & sub$datetime<= "2021-11-07"]
 #-------------------------------------------------------------------------------#
 #parameter evolution figs 
 #read in all forecasts 
-params_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/all_UC"))
+params_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/scores/all_UC"))
 params <- arrow::open_dataset(params_dir) |> collect() |>   
   filter(variable %in% c("lw_factor","zone1temp","zone2temp"), horizon >=0)
 

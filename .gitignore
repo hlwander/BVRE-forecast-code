@@ -20,3 +20,5 @@ analysis/figures/*
 analysis/summary_files/*
 scores/*
 archive
+scores.zip
+targets.zip
