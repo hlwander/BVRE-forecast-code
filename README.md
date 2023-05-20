@@ -26,6 +26,6 @@ This code reproduces figures from the Beaverdam Reservoir forecasting data assim
 
 3. Open a webbrowser and enter `http://localhost:8787`.  You will see an Rstudio login screen.  The user name is `rstudio` and the password is `yourpassword`
 
-4. In the Rstudion session, Start new project, select version control, and use this respository.
+4. In the Rstudion session: Start new project -> select version control -> Git -> use this respository
 
 6. Follow the instructions above for reproducing the figures or the forecasts
