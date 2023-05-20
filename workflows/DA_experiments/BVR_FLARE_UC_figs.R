@@ -177,8 +177,9 @@ mean(c(last(params$mean[params$variable=="zone2temp" & params$model_id=="Daily"]
 
 #read in all forecasts with IC on
 score_dir_yesIC <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/all_UC"))
-all_DA_forecasts_yesIC <- arrow::open_dataset(score_dir_yesIC) |> collect() |>   
-  filter(!is.na(observation), variable == "temperature",horizon > 0.3)
+all_DA_forecasts_yesIC <- arrow::open_dataset(score_dir_yesIC) |> 
+  filter(!is.na(observation), variable == "temperature",horizon > 0.3) |>
+  collect()    
 
 #need to round horizon because they are in decimal form for all Jan 1 ref date
 all_DA_forecasts_yesIC$horizon <- floor(all_DA_forecasts_yesIC$horizon)
