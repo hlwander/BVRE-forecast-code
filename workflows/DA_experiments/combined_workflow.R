@@ -82,7 +82,7 @@ sims$horizon <- stringr::str_split_fixed(sims$date, "_", 3)[,3]
 
 sims <- sims |>
   mutate(model = as.character(model)) |>
-  select(-date) |>
+  dplyr::select(-date) |>
   distinct_all() |>
   arrange(start_dates)
 
