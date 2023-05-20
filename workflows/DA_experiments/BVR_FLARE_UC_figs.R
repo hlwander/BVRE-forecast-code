@@ -21,8 +21,9 @@ setwd(lake_directory)
 
 #read in all forecasts 
 score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/IC_off"))
-all_DA_forecasts_noIC <- arrow::open_dataset(score_dir) |> collect() |>   
-  filter(!is.na(observation), variable == "temperature",horizon > 0.3) 
+all_DA_forecasts_noIC <- arrow::open_dataset(score_dir) |>    
+  filter(!is.na(observation), variable == "temperature",horizon > 0.3) |>
+  collect() 
 
 
 #need to round horizon because they are in decimal form for all Jan 1 ref date
@@ -112,8 +113,9 @@ cb_friendly_2 <- c("#8C510A", "#BF812D", "#C7EAE5", "#35978F") #"#DFC27D", "#DED
 
 #read in all forecasts 
 params_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/IC_off"))
-params <- arrow::open_dataset(score_dir) |> collect() |>   
-  filter(variable %in% c("lw_factor","zone1temp","zone2temp"), horizon >=0)
+params <- arrow::open_dataset(score_dir) |>  
+  filter(variable %in% c("lw_factor","zone1temp","zone2temp"), horizon >=0) |>  
+  collect()
 
 #need to round horizon becuase they are in decimal form for some reason...
 params$horizon <- ceiling(params$horizon)

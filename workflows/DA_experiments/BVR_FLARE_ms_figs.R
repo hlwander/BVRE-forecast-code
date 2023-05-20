@@ -1,5 +1,10 @@
 #Figures for BVR FLARE ms
 #09 Sep 2022 HLW
+library(tidyverse)
+library(lubridate)
+library(ggnewscale)
+library(viridis)
+library(padr)
 
 #change tag_facet code
 tag_facet2 <- function(p, open = "(", close = ")", tag_pool = letters, x = -Inf, y = Inf, 
@@ -22,9 +27,10 @@ setwd(lake_directory)
 
 #read in all forecasts 
 score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/all_UC"))
-all_DA_forecasts <- arrow::open_dataset(score_dir) |> collect() |>   
-  filter(!is.na(observation), variable == "temperature",horizon >= 0, 
-         as.Date(reference_datetime) > "2020-12-31") 
+all_DA_forecasts <- arrow::open_dataset(score_dir) |> 
+  filter(!is.na(observation), variable == "temperature", horizon >= 0) |>
+         collect() |>   
+  filter(as.Date(reference_datetime) > "2020-12-31") 
 
 #round horizon because Jan 01 2021 has weird decimals
 all_DA_forecasts$horizon <- round(all_DA_forecasts$horizon)
@@ -406,8 +412,9 @@ range(sub$observation[sub$datetime>= "2021-03-12" & sub$datetime<= "2021-11-07"]
 #parameter evolution figs 
 #read in all forecasts 
 params_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/all_UC"))
-params <- arrow::open_dataset(params_dir) |> collect() |>   
-  filter(variable %in% c("lw_factor","zone1temp","zone2temp"), horizon >=0)
+params <- arrow::open_dataset(params_dir) |>  
+  filter(variable %in% c("lw_factor","zone1temp","zone2temp"), horizon >=0) |>  
+  collect() 
 
 #change datetime format
 params$datetime <- as.Date(params$datetime)
