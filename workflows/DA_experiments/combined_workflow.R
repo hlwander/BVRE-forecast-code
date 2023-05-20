@@ -1,5 +1,4 @@
 library(tidyverse)
-#library(hydroGOF)
 library(lubridate)
 
 set.seed(100)
@@ -16,27 +15,36 @@ starting_index <- 1
 
 if(use_archive){
   use_s3 <- FALSE
-  download.file(url = "https://zenodo.org/record/7925098/files/drivers.zip?download=1", destfile = file.path(lake_directory,"drivers.zip"), method = "curl")
+  use_met_s3 <- FALSE
+  if(!file.exists("drivers.zip")){
+    download.file(url = "https://zenodo.org/record/7925098/files/drivers.zip?download=1", destfile = file.path(lake_directory,"drivers.zip"), method = "curl")
+  }
+  unzip(file.path(lake_directory,"drivers.zip"))
   met_local_directory <- file.path(lake_directory,"drivers/noaa/gefs-v12-reprocess")
+  dir.create(file.path(lake_directory, "drivers/noaa/gefs-v12-reprocess", "stage3", "parquet", "bvre"), recursive = TRUE, showWarnings = FALSE)
+  file.copy(from = file.path(lake_directory, "drivers/noaa/gefs-v12-reprocess", "stage3", "bvre", "part-0.parquet"),
+            to = file.path(lake_directory, "drivers/noaa/gefs-v12-reprocess", "stage3", "parquet", "bvre", "part-0.parquet"))
 }else{
   Sys.setenv('AWS_DEFAULT_REGION' = 's3',
              'AWS_S3_ENDPOINT' = 'flare-forecast.org',
              'USE_HTTPS' = TRUE)
   met_local_directory <- NULL
+  use_met_s3 <- TRUE
 }
 
-#read in temp obs from EDI
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/389/6/a5524c686e2154ec0fd0459d46a7d1eb",
-                     file = config_obs$met_raw_obs_fname[2],
-                     lake_directory)
+config_obs <- FLAREr::initialize_obs_processing(lake_directory, observation_yml = "observation_processing.yml", config_set_name = config_set_name)
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/725/2/026a6e2cca8bdf18720d6a10d8860e3d",
-                     file = config_obs$insitu_obs_fname[2],
-                     lake_directory)
+if(!file.exists(config_obs$insitu_obs_fname[2])){
+  FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/725/2/026a6e2cca8bdf18720d6a10d8860e3d",
+                       file = config_obs$insitu_obs_fname[2],
+                       lake_directory)
+}
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/725/2/8c0d1d8ea078d274c252cd362a500d26",
-                     file = config_obs$insitu_obs_fname[3],
-                     lake_directory)
+if(!file.exists(config_obs$insitu_obs_fname[3])){
+  FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/725/2/8c0d1d8ea078d274c252cd362a500d26",
+                       file = config_obs$insitu_obs_fname[3],
+                       lake_directory)
+}
 
 #DA frequency vectors
 daily <- seq.Date(as.Date("2020-11-27"), as.Date("2022-02-01"), by = 1)#changing end to 2022-02-01 because need observations to evaluate forecasts 
@@ -47,7 +55,6 @@ date_list <- list(daily = daily,
 models <- names(date_list)
 
 num_forecasts <- 366 #* 3 - 3
-#num_forecasts <- 1#19 * 7 + 1
 days_between_forecasts <- 1
 forecast_horizon <- 35
 starting_date <- as_date("2020-11-27") 
@@ -85,13 +92,12 @@ message("Generating targets")
 
 #' Source the R files in the repository
 
-source(file.path(lake_directory, "R", "met_qaqc_csv.R"))
 source(file.path(lake_directory, "R", "in_situ_qaqc.R"))
 source(file.path(lake_directory, "R", "temp_oxy_chla_qaqc.R"))
 
 #' Generate the `config_obs` object and create directories if necessary
 
-config_obs <- FLAREr::initialize_obs_processing(lake_directory, observation_yml = "observation_processing.yml", config_set_name = config_set_name)
+#config_obs <- FLAREr::initialize_obs_processing(lake_directory, observation_yml = "observation_processing.yml", config_set_name = config_set_name)
 dir.create(file.path(lake_directory, "targets", config_obs$site_id), showWarnings = FALSE)
 
 
@@ -140,7 +146,7 @@ for(i in starting_index:nrow(sims)){
   
   message(paste0("index: ", i))
   message(paste0("     Running model: ", sims$model[i], " "))
-
+  
   model <- sims$model[i]
   sim_names <- model
   
@@ -191,7 +197,7 @@ for(i in starting_index:nrow(sims)){
                                               forecast_start_datetime = config$run_config$forecast_start_datetime,
                                               forecast_horizon =  config$run_config$forecast_horizon,
                                               site_id = config$location$site_id,
-                                              use_s3 = TRUE,
+                                              use_s3 = use_met_s3,
                                               bucket = config$s3$drivers$bucket,
                                               endpoint = config$s3$drivers$endpoint,
                                               local_directory = met_local_directory,
@@ -216,11 +222,8 @@ for(i in starting_index:nrow(sims)){
   idx <- which(!full_time %in% date_list[[da_freq]])
   obs[1, idx, ] <- NA
   
-  #set output directory so each frequency/experiment is saved in a separate folder
-  #config$file_path$forecast_output_directory <- file.path(lake_directory,"forecasts","bvre","DA_experiments",names(date_list)[da_freq])
-  
   message("Generating forecast")
-
+  
   #separating this from 2.5 so I can iteratively loop through this scipt for each day I want to generate forecasts
   states_config <- FLAREr::generate_states_to_obs_mapping(states_config, obs_config)
   
@@ -278,11 +281,8 @@ for(i in starting_index:nrow(sims)){
                              ncore = 2,
                              obs_csv = FALSE)
   
-  FLAREr::put_forecast(saved_file, eml_file_name, config)
+  FLAREr::put_forecast(saved_file, eml_file_name = NULL, config)
   
-  #unlink(saved_file)
-  
-  #unlink(config$run_config$restart_file)
   
   rm(da_forecast_output)
   gc()
