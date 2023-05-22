@@ -18,10 +18,4 @@ RUN echo "Checking for 'apt.txt'..." \
 USER ${NB_USER}
 
 ## Run an install.R script, if it exists.
-#RUN if [ -f workflows/DA_experiments/install.R ]; then R --quiet -f workflows/DA_experiments/install.R; fi
-
-RUN mkdir /home/rstudio/wander_et_al      
-RUN cd /home/rstudio/wander_et_al
-RUN pwd
-RUN git clone https://github.com/EcoDynForecast/BVRE-forecast-code.git /home/rstudio/BVRE-forecast-code
-
+RUN if [ -f workflows/DA_experiments/install.R ]; then R --quiet -f workflows/DA_experiments/install.R; fi
