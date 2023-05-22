@@ -8,8 +8,6 @@ RUN git clone https://github.com/EcoDynForecast/BVRE-forecast-code.git /home/rst
 
 RUN Rscript /home/rstudio/BVRE-forecast-code/workflows/DA_experiments/install.R
 
-WORKDIR /home/rstudio/BVRE-forecast-code
-
 USER root
 
 
