@@ -1,2 +1,3 @@
 libnetcdf-dev
 libgd-dev
+git
