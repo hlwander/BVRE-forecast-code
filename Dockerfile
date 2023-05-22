@@ -23,5 +23,5 @@ USER ${NB_USER}
 RUN mkdir /home/rstudio/wander_et_al      
 RUN cd /home/rstudio/wander_et_al
 RUN pwd
-RUN git clone https://github.com/EcoDynForecast/BVRE-forecast-code.git
+RUN git clone https://github.com/EcoDynForecast/BVRE-forecast-code.git /home/rstudio/BVRE-forecast-code
 
