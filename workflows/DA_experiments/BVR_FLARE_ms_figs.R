@@ -562,7 +562,7 @@ ggplot(data=subset(forecast_days_horizons, horizon==1), aes(x=reference_datetime
   guides(fill = guide_legend(title="DA frequency",
                              override.aes = list(pch=c(rep(21,4)),
                                                  size=2)), color="none")
-ggsave(file.path(lake_directory,"analysis/figures/Temp_UC_2021_1day.jpg"),width=4, height=3)
+#ggsave(file.path(lake_directory,"analysis/figures/Temp_UC_2021_1day.jpg"),width=4, height=3)
 
 #now calculate 1-day ahead UC for daily and monthly DA
 mean(forecast_days_horizons$forecast_mean[forecast_days_horizons$horizon==1 & 
