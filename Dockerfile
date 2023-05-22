@@ -18,7 +18,7 @@ RUN echo "Checking for 'apt.txt'..." \
 USER ${NB_USER}
 
 ## Run an install.R script, if it exists.
-RUN if [ -f workflows/DA_experiments/install.R ]; then R --quiet -f workflows/DA_experiments/install.R; fi
+#RUN if [ -f workflows/DA_experiments/install.R ]; then R --quiet -f workflows/DA_experiments/install.R; fi
 
 USER rstudio
 
