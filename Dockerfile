@@ -10,4 +10,6 @@ RUN Rscript /home/rstudio/BVRE-forecast-code/workflows/DA_experiments/install.R
 
 USER root
 
+WORKDIR /home/rstudio/BVRE-forecast-code
+
 
