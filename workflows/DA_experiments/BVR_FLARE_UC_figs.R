@@ -1,3 +1,5 @@
+library(tidyverse)
+library(lubridate)
 #UC analysis figs
 #29 Dec 2022
 
@@ -19,8 +21,9 @@ setwd(lake_directory)
 
 #read in all forecasts 
 score_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/IC_off"))
-all_DA_forecasts_noIC <- arrow::open_dataset(score_dir) |> collect() |>   
-  filter(!is.na(observation), variable == "temperature",horizon > 0.3) 
+all_DA_forecasts_noIC <- arrow::open_dataset(score_dir) |>    
+  filter(!is.na(observation), variable == "temperature",horizon > 0.3) |>
+  collect() 
 
 
 #need to round horizon because they are in decimal form for all Jan 1 ref date
@@ -110,8 +113,9 @@ cb_friendly_2 <- c("#8C510A", "#BF812D", "#C7EAE5", "#35978F") #"#DFC27D", "#DED
 
 #read in all forecasts 
 params_dir <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/IC_off"))
-params <- arrow::open_dataset(score_dir) |> collect() |>   
-  filter(variable %in% c("lw_factor","zone1temp","zone2temp"), horizon >=0)
+params <- arrow::open_dataset(score_dir) |>  
+  filter(variable %in% c("lw_factor","zone1temp","zone2temp"), horizon >=0) |>  
+  collect()
 
 #need to round horizon becuase they are in decimal form for some reason...
 params$horizon <- ceiling(params$horizon)
@@ -173,8 +177,9 @@ mean(c(last(params$mean[params$variable=="zone2temp" & params$model_id=="Daily"]
 
 #read in all forecasts with IC on
 score_dir_yesIC <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/all_UC"))
-all_DA_forecasts_yesIC <- arrow::open_dataset(score_dir_yesIC) |> collect() |>   
-  filter(!is.na(observation), variable == "temperature",horizon > 0.3)
+all_DA_forecasts_yesIC <- arrow::open_dataset(score_dir_yesIC) |> 
+  filter(!is.na(observation), variable == "temperature",horizon > 0.3) |>
+  collect()    
 
 #need to round horizon because they are in decimal form for all Jan 1 ref date
 all_DA_forecasts_yesIC$horizon <- floor(all_DA_forecasts_yesIC$horizon)

@@ -17,3 +17,15 @@ This code reproduces figures from the Beaverdam Reservoir forecasting data assim
 2.  Run `combined_workflows.R` in the `workflows/DA_experiments` folder to iteratively generate forecasts for every data assimilation frequency and day in the forecast period
 
     **Note** Running forecasts for 365 days and all four data assimilation frequencies will take \> 10 days.
+
+# Instructions for reproducing using Docker
+
+1. Download and install Docker to your computer (https://www.docker.com)
+
+2. At the command line, run `docker run --rm -ti -e PASSWORD=yourpassword -p 8787:8787 rqthomas/wander_et_al:latest`
+
+3. Open a webbrowser and enter `http://localhost:8787`.  You will see an Rstudio login screen.  The user name is `rstudio` and the password is `yourpassword`
+
+4. In the Rstudion session:  File -> Open project -> select BVRE-forecast-code/BVRE-forecast-code.Rproj
+
+6. Follow the instructions above for reproducing the figures or the forecasts (**note: the R packages are already installed in the Docker container so `install.R` does not need to be run**)
