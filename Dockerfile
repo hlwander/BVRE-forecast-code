@@ -20,6 +20,7 @@ USER ${NB_USER}
 ## Run an install.R script, if it exists.
 #RUN if [ -f workflows/DA_experiments/install.R ]; then R --quiet -f workflows/DA_experiments/install.R; fi
 
-RUN mkdir /home/rstudio/wander_et_al \
-    cd /home/rstudio/wander_et_al \
-    git clone https://github.com/EcoDynForecast/BVRE-forecast-code.git
+RUN mkdir /home/rstudio/wander_et_al \      
+           cd /home/rstudio/wander_et_al \        
+           git clone https://github.com/EcoDynForecast/BVRE-forecast-code.git
+
