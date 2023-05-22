@@ -6,9 +6,7 @@ USER rstudio
 
 RUN git clone https://github.com/EcoDynForecast/BVRE-forecast-code.git /home/rstudio/BVRE-forecast-code
 
-#RUN Rscript /home/rstudio/BVRE-forecast-code/workflows/DA_experiments/install.R
-
-RUN cd /home/rstudio/BVRE-forecast-code
+RUN Rscript /home/rstudio/BVRE-forecast-code/workflows/DA_experiments/install.R
 
 USER root
 
