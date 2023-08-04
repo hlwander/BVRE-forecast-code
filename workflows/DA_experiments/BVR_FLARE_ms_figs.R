@@ -453,16 +453,13 @@ mean(params$mean[params$variable=="lw_factor" & params$model_id=="Weekly" & para
 mean(params$mean[params$variable=="lw_factor" & params$model_id=="Fortnightly" & params$datetime >= "2021-04-01"])
 mean(params$mean[params$variable=="lw_factor" & params$model_id=="Monthly" & params$datetime >= "2021-04-01"])
 
-range(c(mean(params$mean[params$variable=="zone2temp" & params$model_id=="Weekly" & params$datetime >= "2021-04-01"]),
-        mean(params$mean[params$variable=="zone2temp" & params$model_id=="Fortnightly" & params$datetime >= "2021-04-01"]),
-        mean(params$mean[params$variable=="zone2temp" & params$model_id=="Monthly" & params$datetime >= "2021-04-01"])))
-
+#ranges for daily vs non-daily sed temp params
 range(params$mean[params$variable=="zone2temp" & params$model_id!="Daily" & params$datetime >= "2021-04-01"])
-range(params$mean[params$variable=="zone1temp" & params$model_id!="Daily" & params$datetime >= "2021-04-01"])
+range(params$mean[params$variable=="zone2temp" & params$model_id=="Daily" & params$datetime >= "2021-04-01"])
 
-range(c(mean(params$mean[params$variable=="zone1temp" & params$model_id=="Weekly" & params$datetime >= "2021-04-01"]),
-        mean(params$mean[params$variable=="zone1temp" & params$model_id=="Fortnightly" & params$datetime >= "2021-04-01"]),
-        mean(params$mean[params$variable=="zone1temp" & params$model_id=="Monthly" & params$datetime >= "2021-04-01"])))
+range(params$mean[params$variable=="zone1temp" & params$model_id!="Daily" & params$datetime >= "2021-04-01"])
+range(params$mean[params$variable=="zone1temp" & params$model_id=="Daily" & params$datetime >= "2021-04-01"])
+
 
 mean(c(last(params$mean[params$variable=="lw_factor" & params$model_id=="Weekly"]),
        last(params$mean[params$variable=="lw_factor" & params$model_id=="Fortnightly"]),
