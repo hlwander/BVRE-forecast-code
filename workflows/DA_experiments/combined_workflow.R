@@ -48,7 +48,8 @@ if(!file.exists(config_obs$insitu_obs_fname[3])){
 
 #DA frequency vectors
 daily <- seq.Date(as.Date("2020-11-27"), as.Date("2022-02-01"), by = 1)#changing end to 2022-02-01 because need observations to evaluate forecasts 
-date_list <- list(daily = daily,                                      
+date_list <- list(daily = daily,
+                  daily_no_pars = daily,
                   weekly = daily[seq(1, length(daily), 7)],
                   fortnightly = daily[seq(1, length(daily), 14)],
                   monthly = daily[seq(1, length(daily), 30)]) 
@@ -235,6 +236,12 @@ for(i in starting_index:nrow(sims)){
                                               obs,
                                               config,
                                               historical_met_error = met_out$historical_met_error)
+  
+  if(model == "daily_no_pars"){
+    config$da_setup$par_fit_method <- "perturb_init"
+  }else{
+    config$da_setup$par_fit_method <- "perturb_const"
+  }
   #Run EnKF
   da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
                                                 pars_init = init$pars,
