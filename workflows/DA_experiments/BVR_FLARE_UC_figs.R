@@ -334,7 +334,7 @@ UC_prop$prop_var[UC_prop$prop_var<0] <- 0
 
 fig9 <- ggplot(subset(UC_prop, depth %in% c(1,5,9) & horizon > 0) ,
                aes(horizon, prop_var, color=as.factor(model_id))) +  
-  ylab("Proportion of total uncertainty") + 
+  ylab("Proportion of IC uncertainty") + 
   geom_line() + theme_bw() +# geom_point() +
   guides(color=guide_legend(title="DA frequency")) + 
   xlab("Horizon (Days)")+ ylim(0, 0.85) +
