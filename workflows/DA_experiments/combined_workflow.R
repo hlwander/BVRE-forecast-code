@@ -108,6 +108,10 @@ FLAREr::get_git_repo(lake_directory,
                      directory = config_obs$realtime_insitu_location,
                      git_repo = "https://github.com/FLARE-forecast/BVRE-data.git")
 
+FLAREr::get_git_repo(lake_directory,
+                     directory = "bvre-platform-data-qaqc",
+                     git_repo = "https://github.com/FLARE-forecast/BVRE-data.git")
+
 #' Download files from EDI
 
 FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/725/2/026a6e2cca8bdf18720d6a10d8860e3d",
@@ -141,14 +145,15 @@ FLAREr::put_targets(site_id = config_obs$site_id,
 
 message("Successfully moved targets to s3 bucket")
 
+#subset sims to just the no_pars model
+sims_sub <- sims[sims$model=="daily_no_pars",]
 
-
-for(i in starting_index:nrow(sims)){
+for(i in starting_index:nrow(sims_sub)){
   
   message(paste0("index: ", i))
-  message(paste0("     Running model: ", sims$model[i], " "))
+  message(paste0("     Running model: ", sims_sub$model[i], " "))
   
-  model <- sims$model[i]
+  model <- sims_sub$model[i] 
   sim_names <- model
   
   config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name, sim_name = sim_names)
@@ -169,9 +174,9 @@ for(i in starting_index:nrow(sims)){
   run_config$sim_name <- sim_names
   yaml::write_yaml(run_config, file = file.path(lake_directory, "restart", sites[j], sim_names, configure_run_file))
   config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
-  config$run_config$start_datetime <- as.character(paste0(sims$start_dates[i], " 00:00:00"))
-  config$run_config$forecast_start_datetime <- as.character(paste0(sims$end_dates[i], " 00:00:00"))
-  config$run_config$forecast_horizon <- sims$horizon[i]
+  config$run_config$start_datetime <- as.character(paste0(sims_sub$start_dates[i], " 00:00:00"))
+  config$run_config$forecast_start_datetime <- as.character(paste0(sims_sub$end_dates[i], " 00:00:00"))
+  config$run_config$forecast_horizon <- sims_sub$horizon[i]
   if(i <= length(models)){
     config$run_config$restart_file <- NA
   }else{
@@ -189,7 +194,10 @@ for(i in starting_index:nrow(sims)){
   config$run_config$sim_name <- sim_names
   config <- FLAREr::get_restart_file(config, lake_directory)
   
-  da_freq <- which(names(date_list) == sims$model[i])
+  config$run_config$restart_file <- file.path(lake_directory, "forecasts", 
+                                              config$location$site_id, "constant_pars", restart_file)
+  
+  da_freq <- which(names(date_list) == sims_sub$model[i])
   
   met_out <- FLAREr::generate_met_files_arrow(obs_met_file = NULL,
                                               out_dir = config$file_path$execute_directory,
@@ -262,14 +270,14 @@ for(i in starting_index:nrow(sims)){
                                                 par_fit_method = config$da_setup$par_fit_method)
   
   saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
-                                              forecast_output_directory = config$file_path$forecast_output_directory,
+                                              forecast_output_directory = paste0(config$file_path$forecast_output_directory,"/constant_pars"),
                                               use_short_filename = TRUE)
   
   forecast_df <- FLAREr::write_forecast_arrow(da_forecast_output = da_forecast_output,
                                               use_s3 = use_s3,
                                               bucket = config$s3$forecasts_parquet$bucket,
                                               endpoint = config$s3$forecasts_parquet$endpoint,
-                                              local_directory = file.path(lake_directory, config$s3$forecasts_parquet$bucket))
+                                              local_directory = file.path(lake_directory, "forecasts/parquets/constant_pars"))
   
   
   FLAREr::generate_forecast_score_arrow(targets_file = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
@@ -277,7 +285,7 @@ for(i in starting_index:nrow(sims)){
                                         use_s3 = use_s3,
                                         bucket = config$s3$scores$bucket,
                                         endpoint = config$s3$scores$endpoint,
-                                        local_directory = file.path(lake_directory, config$s3$scores$bucket),
+                                        local_directory = file.path(lake_directory, "scores/constant_pars"),
                                         variable_types = c("state","parameter"))
   
   #rm(da_forecast_output)
