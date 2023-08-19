@@ -364,3 +364,97 @@ mean(UC_prop$prop_var[UC_prop$phen=="Mixed"])
 mean(UC_prop$prop_var[UC_prop$phen=="Stratified" & UC_prop$depth==9 &
                         UC_prop$horizon>=10 & UC_prop$horizon<=20])
 
+#------------------------------------------------------------------------------#
+#SI figs for constant parameter FLARE run
+
+#read in all forecasts with IC on
+scores_const_par <- arrow::SubTreeFileSystem$create(file.path(lake_directory,"scores/constant_pars"))
+forecasts_const_pars <- arrow::open_dataset(scores_const_par) |> 
+  filter(!is.na(observation), variable == "temperature",horizon > 0.3) |>
+  collect()    
+
+#need to round horizon because they are in decimal form for all Jan 1 ref date
+forecasts_const_pars$horizon <- floor(forecasts_const_pars$horizon)
+
+strat_date<- "2021-11-07"
+
+#add stratified vs mixed col
+forecasts_const_pars$phen <- ifelse(forecasts_const_pars$datetime <= as.POSIXct(strat_date) & 
+                                      forecasts_const_pars$datetime >="2021-03-12","Stratified", "Mixed")
+
+#remove n=6 days with ice-cover 
+forecasts_const_pars <- forecasts_const_pars[!(as.Date(forecasts_const_pars$datetime) %in% c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
+                                                                                                   as.Date("2021-02-13"),as.Date("2021-02-14"),as.Date("2021-02-15"))),]
+#drop 11m completely because some rows were NA when water level was low
+forecasts_const_pars <- forecasts_const_pars[!(forecasts_const_pars$depth==11),]
+
+#change model_id to be all uppercase
+forecasts_const_pars$model_id <- str_to_title(forecasts_const_pars$model_id)
+
+#only keep 2021 data
+forecasts_const_pars <- forecasts_const_pars[forecasts_const_pars$datetime<="2021-12-31",]
+
+#forecast skill for each depth and horizon
+forecasts_const_pars_depth_horizon <-  plyr::ddply(forecasts_const_pars, c("depth","horizon","phen", "model_id"), function(x) { #phen instead of datetime?
+  data.frame(
+    RMSE = sqrt(mean((x$mean - x$observation)^2, na.rm = TRUE)),
+    MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
+    pbias = 100 * (sum(x$mean - x$observation, na.rm = TRUE) / sum(x$observation, na.rm = TRUE)),
+    CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS,
+    variance = (mean(x$sd))^2,
+    sd = mean(x$sd)
+  )
+}, .progress = plyr::progress_text(), .parallel = FALSE) 
+
+#combine constant param and tuned param dfs
+combined_param_df <- dplyr::bind_rows(forecasts_const_pars_depth_horizon,
+                                      forecast_skill_depth_horizon_yesIC)
+
+#rename variable names
+combined_param_df$model_id <- ifelse(combined_param_df$model_id=="Daily", "tuned", 
+                                     ifelse(combined_param_df$model_id=="Daily_no_pars", 
+                                            "constant", combined_param_df$model_id))
+
+const_par_rmse <- ggplot(subset(combined_param_df, depth %in% c(1,5,9) & horizon > 0 &
+                                  model_id %in% c("tuned", "constant")) ,
+                      aes(horizon, RMSE, color=as.factor(model_id))) +  
+  ylab(expression("RMSE ("*degree*C*")")) + xlab("Horizon (days)")+
+  geom_line() + theme_bw() + guides(color=guide_legend(title="parameters")) + 
+  geom_hline(yintercept = 2, linetype="dotted") + ylim(0,3.2) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), 
+        legend.position = "right", legend.background = element_blank(),
+        panel.grid.minor = element_blank(), legend.key.size = unit(0.5, "lines"), 
+        panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
+        legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), 
+        legend.title = element_text(size=6), axis.text.x = element_text(vjust = 0.5,size=6), 
+        axis.text.y = element_text(size=6)) + #geom_point() +
+  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + 
+  scale_color_manual(values=c("#CBCE91FF","#EA738DFF"))  
+
+tag_facet2(const_par_rmse, fontface = 1, hjust=0, size=3, tag_pool = c("a","b","c","d","e","f"))
+#ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_const_vs_tuned_pars.jpg"),width=3.5, height=4)
+
+
+const_par_var <- ggplot(subset(combined_param_df, depth %in% c(1,5,9) & horizon > 0 &
+                                 model_id %in% c("tuned", "constant")) ,
+                     aes(horizon, variance, color=as.factor(model_id))) +  
+  ylab("Variance") + xlab("Horizon (days)")+ ylim(0,6.5) +
+  geom_line() + theme_bw() + guides(color=guide_legend(title="parameters")) + 
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), 
+        legend.position = "right", legend.background = element_blank(),
+        panel.grid.minor = element_blank(), legend.key.size = unit(0.5, "lines"), 
+        panel.grid.major = element_blank(),legend.box.margin=margin(-10,-1,-10,-10),
+        legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"), 
+        legend.title = element_text(size=6), axis.text.x = element_text(vjust = 0.5,size=6), 
+        axis.text.y = element_text(size=6)) + #geom_point() +
+  facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + 
+  scale_color_manual(values=c("#CBCE91FF","#EA738DFF"))  
+
+tag_facet2(const_par_var, fontface = 1, size=3, tag_pool = c("a","b","c","d","e","f"))  
+#ggsave(file.path(lake_directory,"analysis/figures/variancevsDAfreq_depth_facets_const_vs_tuned_pars.jpg"),width=3.5, height=4)
+
+mean(combined_param_df$RMSE[combined_param_df$model_id=="constant"])
+mean(combined_param_df$variance[combined_param_df$model_id=="constant"])
+
+mean(combined_param_df$RMSE[combined_param_df$model_id=="tuned"])
+mean(combined_param_df$variance[combined_param_df$model_id=="tuned"])
