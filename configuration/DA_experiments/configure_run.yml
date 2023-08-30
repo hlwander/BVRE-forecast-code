@@ -3,7 +3,7 @@ start_datetime: 2020-11-27 00:00:00
 end_datetime: .na
 forecast_start_datetime: 2021-01-01 00:00:00
 forecast_horizon: '0'
-sim_name: daily_no_pars
+sim_name: fortnightly_no_pars
 configure_flare: configure_flare.yml
 configure_obs: observation_processing.yml
 use_s3: no

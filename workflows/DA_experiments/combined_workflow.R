@@ -51,7 +51,9 @@ daily <- seq.Date(as.Date("2020-11-27"), as.Date("2022-02-01"), by = 1)#changing
 date_list <- list(daily = daily,
                   daily_no_pars = daily,
                   weekly = daily[seq(1, length(daily), 7)],
+                  weekly_no_pars = daily[seq(1, length(daily), 7)],
                   fortnightly = daily[seq(1, length(daily), 14)],
+                  fortnightly_no_pars = daily[seq(1, length(daily), 14)],
                   monthly = daily[seq(1, length(daily), 30)]) 
 models <- names(date_list)
 
@@ -146,7 +148,7 @@ FLAREr::put_targets(site_id = config_obs$site_id,
 message("Successfully moved targets to s3 bucket")
 
 #subset sims to just the no_pars model
-sims_sub <- sims[sims$model=="daily_no_pars",]
+sims_sub <- sims[sims$model=="fortnightly_no_pars",]
 
 for(i in starting_index:nrow(sims_sub)){
   
@@ -245,7 +247,7 @@ for(i in starting_index:nrow(sims_sub)){
                                               config,
                                               historical_met_error = met_out$historical_met_error)
   
-  if(model == "daily_no_pars"){
+  if(model == "fortnightly_no_pars"){
     config$da_setup$par_fit_method <- "perturb_init"
   }else{
     config$da_setup$par_fit_method <- "perturb_const"
