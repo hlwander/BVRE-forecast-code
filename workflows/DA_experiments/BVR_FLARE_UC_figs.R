@@ -190,6 +190,10 @@ forecast_skill_layer_horizon_yesIC$IC <- "yes"
 forecast_horizon_avg_noIC$IC <- "n"
 forecast_horizon_avg_yesIC$IC <- "y"
 
+#reorder layers
+forecast_skill_layer_horizon_noIC$layer <- 
+  factor(forecast_skill_layer_horizon_noIC$layer, levels = c("surface", "middle","bottom"))
+
 #fig s3
 IC_off_rmse <- ggplot(subset(forecast_skill_layer_horizon_noIC, horizon > 0) ,
                      aes(horizon, RMSE, color=as.factor(model_id), aes=as.factor(IC))) +  

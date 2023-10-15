@@ -128,25 +128,8 @@ forecast_avg <- plyr::ddply(all_DA_forecasts, c("model_id", "horizon"), function
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
 
 
-#forecast skill for each depth and horizon
-#forecasts_tuned_bad_pars_depth_horizon_avg <-  plyr::ddply(forecasts_tuned_bad_pars, c("horizon", "model_id"), function(x) { #phen instead of datetime?
-#  data.frame(
-#    RMSE = sqrt(mean((x$mean - x$observation)^2, na.rm = TRUE)),
-#    MAE = mean(abs(x$mean - x$observation), na.rm = TRUE),
-#    pbias = 100 * (sum(x$mean - x$observation, na.rm = TRUE) / sum(x$observation, na.rm = TRUE)),
-#    CRPS = verification::crps(x$observation, as.matrix(x[, c(7,9)]))$CRPS,
-#    variance = (mean(x$sd))^2,
-#    sd = mean(x$sd)
-#  )
-#}, .progress = plyr::progress_text(), .parallel = FALSE) 
-
 #order DA frequencies
 forecast_avg$model_id <- factor(forecast_avg$model_id, levels=c("Daily", "Weekly", "Fortnightly", "Monthly"))
-
-#rename daily to daily rerun
-#forecasts_tuned_bad_pars_depth_horizon_avg$model_id <- ifelse(
-#  forecasts_tuned_bad_pars_depth_horizon_avg$model_id=="Daily_no_pars","tuned", 
-#  forecasts_tuned_bad_pars_depth_horizon_avg$model_id)
 
 #------------------------------------------------------------------------------#
 #FIGURES
@@ -170,11 +153,6 @@ ggplot(subset(forecast_avg, horizon > 0 & #test
         axis.text.x = element_text(vjust = 0.5,size=6), axis.text.y = element_text(size=6)) +
   scale_color_manual(values=cb_friendly_2)# +geom_point()
 #ggsave(file.path(lake_directory,"analysis/figures/RMSEvshorizon_fig6_Q1_daily_badpars.jpg"),width=4, height=3)
-
-
-#combine constant param and tuned param dfs
-#test <- dplyr::bind_rows(forecasts_tuned_bad_pars_depth_horizon,
-#                         )
 
 #reorder layers
 forecast_skill_layer_horizon$layer <- 
@@ -385,7 +363,6 @@ fig4_poc <- ggplot(subset(all_da_sub_final, depth %in% c(1,5,9)), aes(horizon, f
   scale_fill_manual(values=rev(cb_friendly_2), 
                     labels=c("Daily","Weekly","Fortnightly","Monthly")) + 
   guides(fill="none") + new_scale_fill() +
-  #geom_vline(xintercept=as.Date("2021-07-22")) +
   geom_point(data=subset(obs, depth %in% c(1,5,9)), 
              aes(x=datetime, y=observation, size=siz, fill=col), 
              pch=21, color="black") + 
