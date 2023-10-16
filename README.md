@@ -2,7 +2,7 @@
 
 This code reproduces figures from the Beaverdam Reservoir forecasting data assimilation experiments using the FLARE (Forecasting Lake And Reservoir Ecosystems) system in the manuscript by Wander et al. titled "Data assimilation experiments inform monitoring needs for near-term ecological forecasts in a eutrophic reservoir." If you have any questions, contact Heather Wander at hwander\@vt.edu. 
 
-# Instructions to reproduce manuscript + SI figures:      
+# Instructions to reproduce manuscript + SI figures:         
 
 1.  Download or clone github repository to your local computer
 2.  Run `install.R` in the `workflows/DA_experiments` folder to download GLM and FLARE packages and their dependencies
