@@ -18,7 +18,7 @@ This code reproduces figures from the Beaverdam Reservoir forecasting data assim
 
     **Note** Running forecasts for 365 days and all four data assimilation frequencies will take \> 10 days.
 
-# Instructions for reproducing using Docker
+# Instructions for reproducing using Docker    
 
 1.  Download and install Docker to your computer (<https://www.docker.com>)
 
