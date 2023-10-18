@@ -70,6 +70,8 @@ if(use_s3){
 }else{
   s3_all_UC <- file.path(lake_directory, "scores/all_UC")
   s3_IC_off <- file.path(lake_directory, "scores/IC_off")
+  s3_const_bad <- file.path(lake_directory, "scores/constant_bad_pars")
+  s3_tuned_bad <- file.path(lake_directory, "scores/tuned_bad_pars")
 }
 
 df_all_UC <- open_dataset(s3_all_UC) |> 
@@ -83,6 +85,20 @@ df_IC_off <- open_dataset(s3_IC_off) |>
          model_id %in% model_id_list)
 
 write_dataset(df_IC_off, path = file.path(lake_directory, "archive/scores/scores/IC_off"), hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
+
+
+df_const_bad <- open_dataset(s3_const_bad) |> 
+  filter(site_id %in% site_id_list,
+         model_id %in% "daily_no_pars")
+
+write_dataset(df_const_bad, path = file.path(lake_directory, "archive/scores/scores/constant_bad_pars"), hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
+
+
+df_tuned_bad <- open_dataset(s3_tuned_bad) |> 
+  filter(site_id %in% site_id_list,
+         model_id %in% "daily_no_pars")
+
+write_dataset(df_tuned_bad, path = file.path(lake_directory, "archive/scores/scores/tuned_bad_pars"), hive_style = TRUE, partitioning = c("site_id","reference_datetime"))
 
 
 setwd(file.path(lake_directory, "archive/scores"))
